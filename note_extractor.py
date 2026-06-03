@@ -8,15 +8,122 @@ encounter, security labels).
 """
 
 import base64
+import re
 from datetime import datetime, timezone
+from html.parser import HTMLParser
 
 # Content types we can confidently render as text.
 _TEXTUAL_HINTS = ("text/", "+xml", "application/xml", "application/json", "application/rtf", "/rtf")
+
+# Preferred representation when Epic returns the same note body in several formats
+# (content[] entries are alternative representations of ONE document). Earlier =
+# better. Plain text first; HTML strips far more cleanly than RTF.
+_FORMAT_PREFERENCE = (
+    "text/plain",
+    "application/xhtml",
+    "text/html",
+    "text/xml",
+    "application/xml",
+    "text/rtf",
+    "application/rtf",
+)
 
 
 def _is_textual(content_type):
     ct = (content_type or "").lower()
     return any(h in ct for h in _TEXTUAL_HINTS)
+
+
+class _HTMLToText(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self._chunks = []
+
+    def handle_data(self, data):
+        self._chunks.append(data)
+
+    def handle_starttag(self, tag, attrs):
+        if tag in ("br", "p", "div", "li", "tr", "h1", "h2", "h3"):
+            self._chunks.append("\n")
+
+    def get_text(self):
+        return "".join(self._chunks)
+
+
+def _strip_html(text):
+    try:
+        parser = _HTMLToText()
+        parser.feed(text)
+        out = parser.get_text()
+    except Exception:
+        out = re.sub(r"<[^>]+>", "", text)  # crude fallback
+    return re.sub(r"\n{3,}", "\n\n", out).strip()
+
+
+def _strip_rtf(text):
+    """Best-effort RTF -> text. (HTML is preferred when available, so RTF is a
+    fallback; this handles the common control words, not the full spec.)"""
+    s = text
+    # Drop common destination groups (font/color tables, stylesheet, info, etc.).
+    s = re.sub(r"\{\\\*?\\?(?:fonttbl|colortbl|stylesheet|info|generator)[^{}]*\}", "", s)
+    s = re.sub(r"\\'[0-9a-fA-F]{2}", "", s)            # hex-escaped chars
+    s = re.sub(r"\\u-?\d+\??", "", s)                  # unicode escapes
+    s = re.sub(r"\\par[d]?\b", "\n", s)                # paragraph breaks
+    s = re.sub(r"\\(?:line|tab)\b", "\n", s)
+    s = re.sub(r"\\[a-zA-Z]+-?\d* ?", "", s)           # other control words
+    s = re.sub(r"[{}]", "", s)                         # leftover braces
+    return re.sub(r"\n{3,}", "\n\n", s).strip()
+
+
+def _clean(content_type, text):
+    """Markup-strip text based on its content type; passthrough for plain text."""
+    if not text:
+        return text
+    ct = (content_type or "").lower()
+    if "html" in ct or "xml" in ct:
+        return _strip_html(text)
+    if "rtf" in ct:
+        return _strip_rtf(text)
+    return text.strip()
+
+
+def _format_rank(content_type):
+    ct = (content_type or "").lower()
+    for i, pref in enumerate(_FORMAT_PREFERENCE):
+        if pref in ct:
+            return i
+    return len(_FORMAT_PREFERENCE)  # unknown formats sort last
+
+
+def _norm(text):
+    return re.sub(r"\s+", " ", text or "").strip().lower()
+
+
+def _combine_parts(content_parts):
+    """Collapse alternative representations of the SAME body while keeping
+    genuinely distinct content.
+
+    Epic often returns one note body in several formats (e.g. HTML + RTF). Those
+    are duplicates and we keep only the preferred format. But multiple content
+    entries can also carry different content -- those we keep. Dedup is by text
+    containment (after markup-stripping/normalizing), with format preference
+    deciding which copy of a duplicate survives.
+    """
+    ranked = sorted(
+        [p for p in content_parts if p.get("clean_text")],
+        key=lambda p: _format_rank(p.get("content_type")),
+    )
+    accepted = []
+    for part in ranked:
+        norm = _norm(part["clean_text"])
+        if not norm:
+            continue
+        if any(norm in _norm(a["clean_text"]) or _norm(a["clean_text"]) in norm for a in accepted):
+            continue  # same text as an already-accepted (preferred) format
+        accepted.append(part)
+    # Emit in original document order for readability.
+    return [p for p in content_parts if p in accepted]
+
 
 
 def _decode(data_b64, content_type):
@@ -80,7 +187,8 @@ def _extract_content(resource, client):
                 "language": att.get("language"),
                 "source": source,
                 "url": att.get("url"),
-                "text": text,
+                "text": text,                       # raw, as returned (markup intact)
+                "clean_text": _clean(ctype, text),  # markup-stripped
             }
         )
     return parts
@@ -111,8 +219,12 @@ def extract_note(resource, client=None, resolved_via=None, original_id=None, res
     content_parts = _extract_content(resource, client)
     related = _extract_related(resource, client) if resolve_related else []
 
-    # Combined body: each content part, then any resolved addenda text.
-    chunks = [p["text"] for p in content_parts if p.get("text")]
+    # Body: collapse duplicate format representations, keep distinct content,
+    # then append any resolved addenda. Cleaned (markup-stripped) text is used
+    # here; raw per-format text is retained in `content` for fidelity.
+    accepted = _combine_parts(content_parts)
+    primary_format = accepted[0]["content_type"] if accepted else None
+    chunks = [p["clean_text"] for p in accepted]
     for rel in related:
         rel_note = rel.get("note")
         if rel_note and rel_note.get("combined_text"):
@@ -146,6 +258,7 @@ def extract_note(resource, client=None, resolved_via=None, original_id=None, res
             ],
         },
         "content": content_parts,
+        "primary_format": primary_format,
         "combined_text": combined_text,
         "related": related,
         "raw_document_reference": resource,

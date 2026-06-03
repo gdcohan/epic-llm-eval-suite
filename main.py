@@ -19,6 +19,8 @@ import sys
 import json
 import argparse
 
+import requests
+
 from epic_client import EpicFHIRClient
 from note_extractor import extract_note
 from jury import run_jury, print_verdict
@@ -98,8 +100,15 @@ def cmd_discover(args):
     for pid, name in patients.items():
         print(f"\n🔎 {name} ({pid})")
         try:
-            for d in client.discover_document_references(pid):
+            results = client.discover_document_references(pid)
+            if not results:
+                print("   (no DocumentReferences for this patient)")
+            for d in results:
                 print(f"   {d['id']}  [{d['type']}]  {d['date']}")
+        except requests.HTTPError as exc:
+            code = exc.response.status_code if exc.response is not None else "?"
+            print(f"   ⚠️  unavailable (HTTP {code}) — this test-patient ID may be "
+                  f"stale for the current sandbox; try another.")
         except Exception as exc:
             print(f"   ❌ {exc}")
 
