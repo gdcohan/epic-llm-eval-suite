@@ -2,11 +2,16 @@
   "case_id": "matera-faithful",
   "created_at": "2026-06-03T00:00:00Z",
   "summary": {
-    "text": "MATERA AI assessment for this patient is SEVERE (composite score 1.000). Blood pressure of 165/100 exceeds the ACOG Stage 2 hypertension threshold (>=160/>=110). Four symptoms were detected and a preeclampsia pattern was identified - epigastric pain, headache, nausea, and visual disturbance accompanying elevated blood pressure - and a preeclampsia flag is raised for elevated risk indicators. A confidence-weighted downgrade to Moderate was considered but not applied (confidence 0.40 < 0.5); gestational stage is unknown.",
+    "text": "Across four MATERA automated risk assessments on 2026-06-02, the patient was consistently flagged SEVERE for preeclampsia (composite score 0.70-1.00), driven by ACOG Stage 2 hypertension. Blood pressures ranged from 165/100 to 200/120, all exceeding the >=160/>=110 threshold, and a preeclampsia flag was raised on every run. The most recent assessment (18:05) was the most concerning: BP 200/100 with five symptoms (edema, headache, nausea, shortness of breath, visual disturbance) in a second-trimester pregnancy. Earlier runs noted a confidence-weighted downgrade to Moderate that was considered but never applied (confidence 0.40 < 0.5).",
     "path": null,
     "source": "manual",
-    "generated_at": "2026-06-02T15:10:00Z"
+    "generated_at": "2026-06-02T18:30:00Z"
   },
-  "source_note_ids": ["exArVzMeT-ygdBnZHKFVilg3"],
-  "_note": "Live example (real Jason Argonaut MATERA consult; run WITHOUT --mock). Hand-written summary that stands in for an Epic GenAI summary, grounded in the actual note content. Faithful + medically sound, including the not-applied confidence downgrade -> should score high across all dimensions."
+  "source_note_ids": [
+    "ex.6rDRiWud-9UTbkd8PDkg3",
+    "eY4KXcuJZ8gR9OCeC58271A3",
+    "exArVzMeT-ygdBnZHKFVilg3",
+    "eaibpvCkNL9BzrSwueTYNQg3"
+  ],
+  "_note": "Live multi-note example (real Jason Argonaut MATERA series, 2026-06-02; run WITHOUT --mock). Hand-written stand-in for an Epic GenAI summary, faithful to the totality and correctly reconciled to the most-recent (18:05, worst) assessment. Should score high across accuracy, comprehensiveness, and correctness."
 }

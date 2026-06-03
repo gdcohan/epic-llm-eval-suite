@@ -2,11 +2,16 @@
   "case_id": "matera-flawed",
   "created_at": "2026-06-03T00:00:00Z",
   "summary": {
-    "text": "The MATERA assessment classifies the patient as moderate risk overall. Blood pressure is only mildly elevated. No preeclampsia indicators were found. The patient was started on metformin to manage her blood pressure.",
+    "text": "The patient's MATERA assessments improved over the course of the day. The most recent reading was reassuring - mildly elevated blood pressure with no symptoms - and the system downgraded her to Moderate risk. She was started on nifedipine to lower her blood sugar.",
     "path": null,
     "source": "manual",
-    "generated_at": "2026-06-02T15:10:00Z"
+    "generated_at": "2026-06-02T18:30:00Z"
   },
-  "source_note_ids": ["exArVzMeT-ygdBnZHKFVilg3"],
-  "_note": "Live example with one planted error per dimension. ACCURACY: 'moderate' and 'no preeclampsia indicators' contradict the SEVERE assessment + preeclampsia flag (note: the Moderate downgrade was explicitly NOT applied). COMPREHENSIVENESS: drops the 165/100 BP, the symptom cluster, and the composite score. CORRECTNESS: 'metformin to manage blood pressure' is medically nonsensical - metformin is an antidiabetic, not an antihypertensive."
+  "source_note_ids": [
+    "ex.6rDRiWud-9UTbkd8PDkg3",
+    "eY4KXcuJZ8gR9OCeC58271A3",
+    "exArVzMeT-ygdBnZHKFVilg3",
+    "eaibpvCkNL9BzrSwueTYNQg3"
+  ],
+  "_note": "Live multi-note example with planted errors. RECENCY/ACCURACY: the most recent assessment (18:05) is actually the WORST (BP 200/100, 5 symptoms, severe) - the summary inverts this, claiming improvement/reassuring/no-symptoms, and asserts a Moderate downgrade that was explicitly never applied. COMPREHENSIVENESS: drops the severe BPs, the symptom clusters, and the preeclampsia flag. CORRECTNESS: 'nifedipine to lower her blood sugar' is medically nonsensical - nifedipine is a calcium-channel blocker (antihypertensive/tocolytic), not a glucose-lowering drug."
 }
