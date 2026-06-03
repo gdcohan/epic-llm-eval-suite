@@ -1,0 +1,6 @@
+requests
+PyJWT
+cryptography
+python-dotenv
+openai
+anthropic

@@ -1,0 +1,26 @@
+{
+  "resourceType": "DocumentReference",
+  "id": "mock-note-addendum-001",
+  "status": "current",
+  "docStatus": "final",
+  "type": {
+    "coding": [ { "system": "http://loinc.org", "code": "81334-5", "display": "Addendum note" } ],
+    "text": "Addendum"
+  },
+  "category": [ { "text": "Clinical Note" } ],
+  "date": "2026-05-29T13:05:00Z",
+  "author": [ { "reference": "Practitioner/mock-reyes", "display": "Alana Reyes, MD" } ],
+  "content": [
+    {
+      "attachment": {
+        "contentType": "text/plain",
+        "data": "QURERU5EVU0gKDIwMjYtMDUtMjksIERyLiBBbGFuYSBSZXllcyk6CkxhYiBmb2xsb3ctdXA6IGZhc3RpbmcgbGlwaWQgcGFuZWwgcmVzdWx0ZWQgLSBMREwgMTQyIG1nL2RMLiBBZGRpbmcgYXRvcnZhc3RhdGluIDQwIG1nIGRhaWx5LiBQYXRpZW50IG5vdGlmaWVkIGJ5IHBob25lIGFuZCB2ZXJiYWxpemVkIHVuZGVyc3RhbmRpbmcuCg==",
+        "title": "Addendum body"
+      }
+    }
+  ],
+  "context": { "encounter": [ { "reference": "Encounter/mock-enc-814502233" } ] },
+  "relatesTo": [
+    { "code": "transforms", "target": { "reference": "DocumentReference/mock-note-progress-001" } }
+  ]
+}

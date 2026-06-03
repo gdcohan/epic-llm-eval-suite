@@ -3,3 +3,6 @@ __pycache__/*
 privatekey.pem
 publickey.pem
 generate_key.py
+
+# Persisted output (fetched notes + jury verdicts)
+data/
