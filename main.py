@@ -2,21 +2,24 @@
 
 Commands:
   demo                          End-to-end on mock data, offline (no creds/keys).
-  fetch    --ids ... | --ids-file f.txt
+  fetch     --ids ... | --ids-file f.txt
                                 Resolve note IDs -> normalized notes -> data/notes/.
-  judge    --note-file n.json --summary s.txt [--summary-text "..."]
-                                Run the jury on a persisted note vs. a candidate summary.
-  run      --ids ... --summary s.txt
-                                Fetch + persist + judge in one shot.
-  discover [--patient ID]       List DocumentReference IDs for sandbox test patients.
+  case      --id ID --notes ... --summary(-text) ...
+                                Create an eval-case manifest (summary + its note IDs).
+  judge-case --case ID [--mock] Judge a case: summary vs. the TOTALITY of its notes.
+  judge     --note-file n.json --summary s.txt
+                                Quick single-note judge (legacy convenience).
+  run       --ids ... --summary s.txt
+                                Fetch notes and judge the summary against all of them.
+  discover  [--patient ID]      List DocumentReference IDs for sandbox test patients.
 
-The jury REQUIRES a candidate summary (the Epic GenAI summary you're evaluating).
-Jury mode is controlled by env: JURY_MODE=stub (default, offline) or live.
+The jury REQUIRES a candidate summary (the Epic GenAI summary you're evaluating)
+and judges it against the totality of its source notes. Jury mode is controlled
+by env: JURY_MODE=stub (default, offline) or live.
 """
 
 import os
 import sys
-import json
 import argparse
 
 import requests
@@ -25,6 +28,7 @@ from epic_client import EpicFHIRClient
 from note_extractor import extract_note
 from jury import run_jury, print_verdict
 import persistence
+import cases
 
 # Epic sandbox test patients (salvaged from the original SDOH scaffolding) --
 # useful for `discover` when you don't have note IDs yet.
@@ -75,8 +79,56 @@ def fetch_notes(ids, client):
     return notes
 
 
+def _gather_notes(ids, client):
+    """Return notes for the given IDs, reusing the local cache before fetching."""
+    notes = []
+    for nid in ids:
+        cached = persistence.load_note_by_id(nid)
+        if cached:
+            print(f"   • cached: {nid}")
+            notes.append(cached)
+            continue
+        print(f"   • fetching: {nid}")
+        resolved = client.resolve_document_reference(nid)
+        note = extract_note(
+            resolved["resource"], client,
+            resolved_via=resolved["resolved_via"], original_id=nid,
+        )
+        persistence.save_note(note)
+        notes.append(note)
+    return notes
+
+
+def _make_client(args):
+    if getattr(args, "mock", False):
+        from mock_client import MockFHIRClient
+        return MockFHIRClient()
+    return EpicFHIRClient()
+
+
 def cmd_fetch(args):
     fetch_notes(_collect_ids(args), EpicFHIRClient())
+
+
+def cmd_case(args):
+    path = cases.create_case(
+        args.id,
+        _collect_ids(args),
+        summary_text=getattr(args, "summary_text", None),
+        summary_path=getattr(args, "summary", None),
+        summary_source=args.summary_source,
+    )
+    print(f"✅ Created case '{args.id}' -> {path}")
+
+
+def cmd_judge_case(args):
+    case = cases.load_case(args.case)
+    print(f"⚖️  Judging case '{case['case_id']}' against "
+          f"{len(case['source_note_ids'])} source note(s)")
+    notes = _gather_notes(case["source_note_ids"], _make_client(args))
+    verdict = run_jury(notes, cases.summary_text(case), case_id=case["case_id"])
+    print_verdict(verdict)
+    print(f"\nSaved verdict -> {persistence.save_verdict(verdict)}")
 
 
 def cmd_judge(args):
@@ -88,10 +140,10 @@ def cmd_judge(args):
 
 def cmd_run(args):
     summary = _read_summary(args)
-    for note in fetch_notes(_collect_ids(args), EpicFHIRClient()):
-        verdict = run_jury(note, summary)
-        print_verdict(verdict)
-        persistence.save_verdict(verdict)
+    notes = fetch_notes(_collect_ids(args), EpicFHIRClient())
+    verdict = run_jury(notes, summary)
+    print_verdict(verdict)
+    persistence.save_verdict(verdict)
 
 
 def cmd_discover(args):
@@ -152,12 +204,25 @@ def build_parser():
     add_ids(sp)
     sp.set_defaults(func=cmd_fetch)
 
-    sp = sub.add_parser("judge", help="Run the jury on a persisted note.")
+    sp = sub.add_parser("case", help="Create an eval-case manifest (summary + note IDs).")
+    sp.add_argument("--id", required=True, help="Case ID.")
+    add_ids(sp)
+    add_summary(sp)
+    sp.add_argument("--summary-source", default="manual",
+                    help="Provenance of the summary, e.g. 'epic-genai' or 'manual'.")
+    sp.set_defaults(func=cmd_case)
+
+    sp = sub.add_parser("judge-case", help="Judge a case vs. the totality of its notes.")
+    sp.add_argument("--case", required=True, help="Case ID or path to a case JSON.")
+    sp.add_argument("--mock", action="store_true", help="Use offline mock FHIR client.")
+    sp.set_defaults(func=cmd_judge_case)
+
+    sp = sub.add_parser("judge", help="Quick single-note judge (legacy).")
     sp.add_argument("--note-file", required=True, help="Path to a persisted note JSON.")
     add_summary(sp)
     sp.set_defaults(func=cmd_judge)
 
-    sp = sub.add_parser("run", help="Fetch + persist + judge in one shot.")
+    sp = sub.add_parser("run", help="Fetch notes and judge the summary against all of them.")
     add_ids(sp)
     add_summary(sp)
     sp.set_defaults(func=cmd_run)

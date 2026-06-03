@@ -1,0 +1,19 @@
+{
+  "resourceType": "DocumentReference",
+  "id": "mock-note-bp-new",
+  "status": "current",
+  "docStatus": "final",
+  "type": { "coding": [ { "system": "http://loinc.org", "code": "11506-3", "display": "Progress note" } ], "text": "Progress Notes" },
+  "category": [ { "text": "Clinical Note" } ],
+  "date": "2026-06-03T08:40:00Z",
+  "author": [ { "display": "Maria Okafor, MD (OB)" } ],
+  "content": [
+    {
+      "attachment": {
+        "contentType": "text/plain",
+        "data": "T0IgUFJPR1JFU1MgTk9URQpEYXRlOiAyMDI2LTA2LTAzCkludGVydmFsOiAyIGRheXMgcG9zdC1hZG1pc3Npb24gZm9yIHByZWVjbGFtcHNpYSB3aXRoIHNldmVyZSBmZWF0dXJlcy4KQlAgbm93IHdlbGwgY29udHJvbGxlZCBhdCAxMjQvODAgb24gb3JhbCBsYWJldGFsb2wuIEhlYWRhY2hlIHJlc29sdmVkLiBObyBlcGlnYXN0cmljIHBhaW4sIG5vIHZpc3VhbCBkaXN0dXJiYW5jZS4gUmVmbGV4ZXMgbm9ybWFsLiBSZXBlYXQgbGFicyAoQ0JDLCBMRlRzLCB1cmljIGFjaWQpIHJlYXNzdXJpbmcgYW5kIHN0YWJsZS4KQXNzZXNzbWVudDogUHJlZWNsYW1wc2lhLCBub3cgV0lUSE9VVCBzZXZlcmUgZmVhdHVyZXM7IGNsaW5pY2FsbHkgTU9ERVJBVEUgYW5kIHN0YWJsZS4KUGxhbjogQ29udGludWUgb3JhbCBsYWJldGFsb2wsIG91dHBhdGllbnQtbGV2ZWwgbW9uaXRvcmluZywgdHdpY2Utd2Vla2x5IEJQIGNoZWNrcy4gU2V2ZXJpdHkgZG93bmdyYWRlZCB0byBNT0RFUkFURS4K"
+      }
+    }
+  ],
+  "context": { "encounter": [ { "reference": "Encounter/mock-enc-ob-001" } ] }
+}

@@ -1,0 +1,12 @@
+{
+  "case_id": "matera-flawed",
+  "created_at": "2026-06-03T00:00:00Z",
+  "summary": {
+    "text": "The MATERA assessment indicates the patient is at moderate risk overall. Blood pressure is only mildly elevated. No preeclampsia features were identified. The patient was started on metformin to control her blood pressure.",
+    "path": null,
+    "source": "epic-genai",
+    "generated_at": "2026-06-02T15:10:00Z"
+  },
+  "source_note_ids": ["exArVzMeT-ygdBnZHKFVilg3", "ex.6rDRiWud-9UTbkd8PDkg3"],
+  "_note": "Live example with planted errors: 'moderate/mildly elevated' and 'no preeclampsia features' contradict the SEVERE assessment (accuracy); the BP value, the flag, and the symptom cluster are dropped (comprehensiveness); 'metformin to control blood pressure' is medically nonsensical - metformin is an antidiabetic, not an antihypertensive (correctness)."
+}

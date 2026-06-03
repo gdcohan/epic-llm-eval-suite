@@ -1,0 +1,19 @@
+{
+  "resourceType": "DocumentReference",
+  "id": "mock-note-bp-old",
+  "status": "current",
+  "docStatus": "final",
+  "type": { "coding": [ { "system": "http://loinc.org", "code": "11488-4", "display": "Consult note" } ], "text": "Consults" },
+  "category": [ { "text": "Clinical Note" } ],
+  "date": "2026-06-01T09:15:00Z",
+  "author": [ { "display": "Maria Okafor, MD (OB)" } ],
+  "content": [
+    {
+      "attachment": {
+        "contentType": "text/plain",
+        "data": "T0IgVFJJQUdFIE5PVEUKRGF0ZTogMjAyNi0wNi0wMQpDQzogaGVhZGFjaGUsIGVwaWdhc3RyaWMgcGFpbiBhdCAzMiB3ZWVrcyBnZXN0YXRpb24uCkJQIDE2NS8xMDAsIHJlcGVhdCAxNjgvMTAyLiBSZWZsZXhlcyBicmlzay4gUmVwb3J0cyBoZWFkYWNoZSwgZXBpZ2FzdHJpYyBwYWluLCBuYXVzZWEsIGludGVybWl0dGVudCB2aXN1YWwgZGlzdHVyYmFuY2UuCkFzc2Vzc21lbnQ6IFByZWVjbGFtcHNpYSB3aXRoIFNFVkVSRSBmZWF0dXJlcyAoQUNPRyBTdGFnZSAyIGh5cGVydGVuc2lvbiwgPj0xNjAvPj0xMTApLgpQbGFuOiBJViBsYWJldGFsb2wsIGFkbWl0IHRvIEwmRCBmb3IgbW9uaXRvcmluZywgbWFnbmVzaXVtIHN1bGZhdGUgZm9yIHNlaXp1cmUgcHJvcGh5bGF4aXMuIFNldmVyaXR5OiBTRVZFUkUuCg=="
+      }
+    }
+  ],
+  "context": { "encounter": [ { "reference": "Encounter/mock-enc-ob-001" } ] }
+}

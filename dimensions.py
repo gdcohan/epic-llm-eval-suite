@@ -16,6 +16,18 @@ class Dimension:
     scale: str = "1-5"
 
 
+# Shared guidance prepended to every dimension's system prompt: how to treat a
+# set of notes that span time and may disagree.
+SOURCE_GUIDANCE = (
+    "The SOURCE NOTES are the totality of notes a summary was drawn from. They "
+    "may span multiple dates and may disagree with one another. When notes "
+    "conflict, treat the MORE RECENT note as authoritative and consider older "
+    "statements superseded -- unless the more recent note is clearly erroneous. "
+    "Judge the summary against this reconciled, most-current clinical picture: do "
+    "not penalize the summary for omitting details that a later note superseded, "
+    "and do not credit it for presenting outdated information as if it were current."
+)
+
 # Shared output contract appended to every dimension's system prompt.
 OUTPUT_CONTRACT = (
     "Return a JSON object with exactly these keys:\n"

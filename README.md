@@ -46,15 +46,38 @@ url-linked `Binary`, all formats), linked/embedded content via `relatesTo`
 `status`/`docStatus`, authors/authenticator, encounter, dates, security labels,
 identifiers. The raw `DocumentReference` is retained too.
 
+### Cases: linking a summary to its notes
+
+A GenAI summary is drawn from **many** notes, so the unit of evaluation is a
+**case** — one summary plus the set of source note IDs it came from
+(`cases.py`, persisted at `data/cases/<case_id>.json`). The manifest references
+notes by their `DocumentReference` ID (the same ID you fetch by), so notes live
+once in `data/notes/` and are looked up on demand. When you have real Epic
+GenAI summaries, the case manifest is exactly where you record their provenance
+(which notes fed the summary). See `examples/cases/` for samples.
+
 ### The jury
 
-A panel of **per-dimension jurists** (see `dimensions.py`) — `accuracy`,
-`comprehensiveness`, `correctness` by default — each scores the **candidate
-summary relative to the source notes**. The jury *requires* a summary; the
-dimensions are only meaningful against one. Each dimension is judged by multiple
-panel members (provider/model/temperature/persona) and averaged, then rolled up
-to an overall score. Providers are pluggable (`llm_providers.py`): OpenAI and
-Anthropic adapters ship today; spanning vendors is one config line.
+A panel of **per-dimension jurists** (see `dimensions.py`) scores the candidate
+summary against the **totality** of its source notes (concatenated oldest-first
+with dated headers). The jury *requires* a summary. Defaults:
+
+- **accuracy** — is every claim *faithful to the notes*? (grounding)
+- **comprehensiveness** — does it capture all clinically significant info?
+- **correctness** — is it *medically sound and internally coherent on its own
+  terms*? A claim can be accurate (in the notes) yet incorrect (e.g.
+  "atorvastatin for diabetes"); this juror uses clinical knowledge and does not
+  treat "it's in the notes" as a defense.
+
+**Recency reconciliation:** notes span time and may disagree. A shared guidance
+clause tells jurors to treat the **more recent** note as authoritative when
+notes conflict (unless it's clearly erroneous), so a summary reflecting the
+current picture isn't penalized for "contradicting" a superseded older note.
+
+Each dimension is judged by multiple panel members
+(provider/model/temperature/persona) and averaged, then rolled up to an overall
+score. Providers are pluggable (`llm_providers.py`): OpenAI and Anthropic
+adapters ship today; spanning vendors is one config line.
 
 ## Setup
 
@@ -76,11 +99,18 @@ python main.py discover
 python main.py fetch --ids <noteId1> <noteId2>
 python main.py fetch --ids-file my_note_ids.txt
 
-# 4) Judge a persisted note against a candidate (GenAI) summary:
-python main.py judge --note-file data/notes/<id>.json --summary summary.txt
+# 4) Create an eval case (summary + the notes it was drawn from), then judge it
+#    against the TOTALITY of those notes:
+python main.py case --id mycase --ids <noteId1> <noteId2> \
+  --summary-text "..." --summary-source epic-genai
+python main.py judge-case --case mycase
 
-# 5) Fetch + persist + judge in one shot:
-python main.py run --ids <noteId> --summary summary.txt
+# 5) Fetch + judge a summary against all given notes in one shot:
+python main.py run --ids <noteId1> <noteId2> --summary summary.txt
+
+# Try the offline recency example (older 'severe' note superseded by a newer
+# 'controlled' one) — set JURY_MODE=live for substantive scoring:
+python main.py judge-case --case examples/cases/recency_demo.json --mock
 ```
 
 `JURY_MODE=stub` (default) runs a deterministic offline jury so the pipeline is
@@ -95,7 +125,9 @@ relevant API key for substantive judgments.
 | `note_extractor.py` | `DocumentReference` → normalized note (text + addenda + metadata) |
 | `persistence.py` | Local JSON persistence for notes and verdicts |
 | `llm_providers.py` | Pluggable LLM providers (OpenAI / Anthropic / Stub) |
-| `dimensions.py` | Jury dimensions (one prompt per jurist) |
-| `jury.py` | Panel runner + aggregation |
+| `dimensions.py` | Jury dimensions (one prompt per jurist) + shared recency guidance |
+| `jury.py` | Panel runner, multi-note aggregation + scoring |
+| `cases.py` | Eval-case manifests (summary ↔ source note IDs) |
 | `mock_client.py`, `mock_data/` | Offline fixtures for the demo |
+| `examples/cases/` | Sample eval cases (recency demo + MATERA faithful/flawed) |
 | `main.py` | CLI |

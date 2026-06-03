@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from llm_providers import get_provider
-from dimensions import DEFAULT_DIMENSIONS, OUTPUT_CONTRACT
+from dimensions import DEFAULT_DIMENSIONS, OUTPUT_CONTRACT, SOURCE_GUIDANCE
 
 
 @dataclass(frozen=True)
@@ -49,6 +49,23 @@ def default_panel():
     ]
 
 
+def _aggregate_source(notes):
+    """Concatenate all source notes chronologically (oldest first) with dated
+    headers, so jurors can see recency and cite which note a fact came from."""
+    def date_key(n):
+        return (n.get("metadata", {}) or {}).get("date") or ""
+
+    blocks = []
+    for i, note in enumerate(sorted(notes, key=date_key), start=1):
+        md = note.get("metadata", {}) or {}
+        header = (
+            f"--- Note {i} | type={md.get('type')} | date={md.get('date')} "
+            f"| id={note.get('document_reference_id')} ---"
+        )
+        blocks.append(f"{header}\n{note.get('combined_text', '')}")
+    return "\n\n".join(blocks)
+
+
 def _build_messages(dimension, source_text, candidate_summary, member):
     system = "\n\n".join(
         filter(
@@ -56,12 +73,13 @@ def _build_messages(dimension, source_text, candidate_summary, member):
             [
                 member.persona,
                 dimension.prompt,
+                SOURCE_GUIDANCE,
                 OUTPUT_CONTRACT.format(scale=dimension.scale),
             ],
         )
     )
     user = (
-        "=== SOURCE NOTES (ground truth) ===\n"
+        "=== SOURCE NOTES (ground truth, oldest first) ===\n"
         f"{source_text}\n\n"
         "=== CANDIDATE SUMMARY (to be judged) ===\n"
         f"{candidate_summary}"
@@ -93,14 +111,19 @@ def _mean(values):
     return round(sum(nums) / len(nums), 2) if nums else None
 
 
-def run_jury(note, candidate_summary, dimensions=None, panel=None):
-    """Score a candidate summary against a fetched note. Returns a verdict dict."""
+def run_jury(notes, candidate_summary, dimensions=None, panel=None, case_id=None):
+    """Score a candidate summary against the TOTALITY of its source notes.
+
+    `notes` may be a single note dict or a list of them. Returns a verdict dict.
+    """
+    if isinstance(notes, dict):
+        notes = [notes]
     if not candidate_summary or not str(candidate_summary).strip():
         raise ValueError("A candidate summary is required -- the jury judges it against the notes.")
 
     dimensions = dimensions or DEFAULT_DIMENSIONS
     panel = panel or default_panel()
-    source_text = note.get("combined_text") or ""
+    source_text = _aggregate_source(notes)
 
     dimension_results = []
     for dim in dimensions:
@@ -116,8 +139,9 @@ def run_jury(note, candidate_summary, dimensions=None, panel=None):
         )
 
     return {
-        "document_reference_id": note.get("document_reference_id"),
-        "note_id": note.get("input_id"),
+        "case_id": case_id,
+        "source_note_ids": [n.get("document_reference_id") or n.get("input_id") for n in notes],
+        "num_notes": len(notes),
         "judged_at": datetime.now(timezone.utc).isoformat(),
         "panel": [m.name for m in panel],
         "overall_score": _mean([d["mean_score"] for d in dimension_results]),
@@ -126,7 +150,8 @@ def run_jury(note, candidate_summary, dimensions=None, panel=None):
 
 
 def print_verdict(verdict):
-    print(f"\n=== Jury verdict for note {verdict.get('document_reference_id')} ===")
+    label = verdict.get("case_id") or ", ".join(verdict.get("source_note_ids") or [])
+    print(f"\n=== Jury verdict: {label} ({verdict.get('num_notes')} note(s)) ===")
     print(f"Panel: {', '.join(verdict['panel'])}")
     for d in verdict["dimensions"]:
         print(f"  • {d['dimension']:<18} mean {d['mean_score']} / {d['scale']}")

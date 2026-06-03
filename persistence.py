@@ -19,10 +19,14 @@ def _write_json(path, obj):
     return path
 
 
+def note_path(note_id, base_dir=NOTES_DIR):
+    return os.path.join(base_dir, f"{_safe(note_id)}.json")
+
+
 def save_note(note, base_dir=NOTES_DIR):
     """Persist one normalized note as JSON; returns the file path."""
     name = note.get("document_reference_id") or note.get("input_id") or "note"
-    return _write_json(os.path.join(base_dir, f"{_safe(name)}.json"), note)
+    return _write_json(note_path(name, base_dir), note)
 
 
 def load_note(path):
@@ -30,7 +34,14 @@ def load_note(path):
         return json.load(f)
 
 
+def load_note_by_id(note_id, base_dir=NOTES_DIR):
+    """Return a previously-fetched note by ID, or None if not persisted yet."""
+    path = note_path(note_id, base_dir)
+    return load_note(path) if os.path.exists(path) else None
+
+
 def save_verdict(verdict, base_dir=VERDICTS_DIR):
     """Persist a jury verdict as JSON; returns the file path."""
-    name = verdict.get("document_reference_id") or verdict.get("note_id") or "verdict"
+    ids = verdict.get("source_note_ids") or []
+    name = verdict.get("case_id") or (ids[0] if ids else None) or "verdict"
     return _write_json(os.path.join(base_dir, f"{_safe(name)}.json"), verdict)

@@ -1,0 +1,12 @@
+{
+  "case_id": "recency-demo",
+  "created_at": "2026-06-03T00:00:00Z",
+  "summary": {
+    "text": "32-week pregnant patient who presented on 2026-06-01 with preeclampsia with severe features (BP 165/100, headache, epigastric pain) and was admitted on IV labetalol and magnesium. As of the most recent note (2026-06-03), blood pressure is well controlled at 124/80 on oral labetalol, symptoms have resolved, and repeat labs are reassuring; her preeclampsia is now without severe features (moderate) and she is clinically stable on outpatient-level monitoring.",
+    "path": null,
+    "source": "manual",
+    "generated_at": "2026-06-03T10:00:00Z"
+  },
+  "source_note_ids": ["mock-note-bp-old", "mock-note-bp-new"],
+  "_note": "Offline demo (run with --mock). The older note says SEVERE; the newer says MODERATE/controlled. A correct summary reflects the most-current picture, so the recency guidance should keep the jury from penalizing it for 'disagreeing' with the older note."
+}
