@@ -62,17 +62,62 @@ def _strip_html(text):
 
 def _strip_rtf(text):
     """Best-effort RTF -> text. (HTML is preferred when available, so RTF is a
-    fallback; this handles the common control words, not the full spec.)"""
-    s = text
-    # Drop common destination groups (font/color tables, stylesheet, info, etc.).
-    s = re.sub(r"\{\\\*?\\?(?:fonttbl|colortbl|stylesheet|info|generator)[^{}]*\}", "", s)
-    s = re.sub(r"\\'[0-9a-fA-F]{2}", "", s)            # hex-escaped chars
-    s = re.sub(r"\\u-?\d+\??", "", s)                  # unicode escapes
-    s = re.sub(r"\\par[d]?\b", "\n", s)                # paragraph breaks
-    s = re.sub(r"\\(?:line|tab)\b", "\n", s)
-    s = re.sub(r"\\[a-zA-Z]+-?\d* ?", "", s)           # other control words
-    s = re.sub(r"[{}]", "", s)                         # leftover braces
-    return re.sub(r"\n{3,}", "\n\n", s).strip()
+    fallback.) Brace-aware: skips destination groups (font/color tables, etc.)
+    whose contents shouldn't appear in the body, and ignores `\\*` destinations.
+    """
+    # Destination groups whose *contents* are metadata, not body text.
+    skip_dests = {
+        "fonttbl", "colortbl", "stylesheet", "info", "generator", "pict",
+        "themedata", "colorschememapping", "latentstyles", "datastore",
+        "listtable", "listoverridetable", "object", "operator",
+    }
+    out = []
+    i, n, depth = 0, len(text), 0
+    skip_at_depth = None  # depth at which the current skipped group opened
+
+    while i < n:
+        c = text[i]
+        if c == "{":
+            depth += 1
+            rest = text[i + 1 :]
+            star = rest.startswith("\\*")
+            m = re.match(r"\\([a-zA-Z]+)", rest[2:] if star else rest)
+            if skip_at_depth is None and (star or (m and m.group(1) in skip_dests)):
+                skip_at_depth = depth
+            i += 1
+            continue
+        if c == "}":
+            if skip_at_depth == depth:
+                skip_at_depth = None
+            depth -= 1
+            i += 1
+            continue
+        if skip_at_depth is not None:
+            i += 1
+            continue
+        if c == "\\":
+            # \'hh hex escape
+            if re.match(r"\\'[0-9a-fA-F]{2}", text[i:]):
+                out.append(" ")
+                i += 4
+                continue
+            m = re.match(r"\\([a-zA-Z]+)(-?\d+)? ?", text[i:])
+            if m:
+                word = m.group(1)
+                if word in ("par", "line", "sect"):
+                    out.append("\n")
+                elif word == "tab":
+                    out.append("\t")
+                i += m.end()
+                continue
+            if i + 1 < n:  # control symbol like \\ or \{
+                out.append(text[i + 1])
+                i += 2
+                continue
+        out.append(c)
+        i += 1
+
+    return re.sub(r"\n{3,}", "\n\n", "".join(out)).strip()
 
 
 def _clean(content_type, text):
@@ -96,7 +141,10 @@ def _format_rank(content_type):
 
 
 def _norm(text):
-    return re.sub(r"\s+", " ", text or "").strip().lower()
+    # Alphanumeric-only key: lets us recognize the same body across formats even
+    # when punctuation/whitespace differs (e.g. an em-dash rendered as spaces in
+    # one representation and "?" in another).
+    return re.sub(r"[^a-z0-9]+", "", (text or "").lower())
 
 
 def _combine_parts(content_parts):
