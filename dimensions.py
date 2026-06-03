@@ -21,7 +21,8 @@ OUTPUT_CONTRACT = (
     "Return a JSON object with exactly these keys:\n"
     '  "score": integer on the {scale} scale (higher is better),\n'
     '  "rationale": a concise justification for the score,\n'
-    '  "supporting_evidence": array of short quotes/spans from the SOURCE NOTES,\n'
+    '  "supporting_evidence": array of short quotes/spans your judgment rests on'
+    " (from the notes and/or the summary, whichever is relevant to this dimension),\n"
     '  "issues": array of specific problems you found (empty if none).'
 )
 
@@ -51,13 +52,19 @@ DEFAULT_DIMENSIONS = [
     ),
     Dimension(
         name="correctness",
-        description="The summary is free of factual/medical errors vs. the source.",
+        description="The summary is medically sound and internally consistent on its own terms.",
         prompt=(
-            "You are a clinical documentation reviewer judging CORRECTNESS. "
-            "Determine whether the CANDIDATE SUMMARY is free of factual or medical "
-            "errors relative to the SOURCE NOTES -- wrong values, swapped entities, "
-            "misstated dosages, reversed conclusions, or temporal mistakes. A "
-            "perfect score means there are no misstatements relative to the source."
+            "You are a clinical reviewer judging CORRECTNESS -- the intrinsic "
+            "medical validity and internal coherence of the CANDIDATE SUMMARY, "
+            "using your own clinical knowledge. Judge each statement on its own "
+            "merits, INDEPENDENTLY of whether it appears in the SOURCE NOTES: a "
+            "statement can be faithfully copied from the notes and still be "
+            "incorrect, so do NOT treat presence in the notes as evidence of "
+            "correctness. Flag anything medically nonsensical or implausible -- a "
+            "drug paired with the wrong indication (e.g. a statin 'for diabetes'), "
+            "doses outside sane ranges, impossible or self-contradictory values, "
+            "and reasoning that does not follow. A perfect score means the summary "
+            "is medically sound and internally consistent as written."
         ),
     ),
 ]
