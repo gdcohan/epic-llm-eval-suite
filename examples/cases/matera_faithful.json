@@ -2,11 +2,11 @@
   "case_id": "matera-faithful",
   "created_at": "2026-06-03T00:00:00Z",
   "summary": {
-    "text": "MATERA AI assessment classifies the patient as SEVERE risk (composite score 1.000). Blood pressure of 165/100 meets the ACOG Stage 2 hypertension threshold (>=160/>=110). A preeclampsia pattern is identified - epigastric pain, headache, nausea, and visual disturbance together with elevated blood pressure - and a preeclampsia flag is raised for elevated risk indicators.",
+    "text": "MATERA AI assessment for this patient is SEVERE (composite score 1.000). Blood pressure of 165/100 exceeds the ACOG Stage 2 hypertension threshold (>=160/>=110). Four symptoms were detected and a preeclampsia pattern was identified - epigastric pain, headache, nausea, and visual disturbance accompanying elevated blood pressure - and a preeclampsia flag is raised for elevated risk indicators. A confidence-weighted downgrade to Moderate was considered but not applied (confidence 0.40 < 0.5); gestational stage is unknown.",
     "path": null,
-    "source": "epic-genai",
+    "source": "manual",
     "generated_at": "2026-06-02T15:10:00Z"
   },
-  "source_note_ids": ["exArVzMeT-ygdBnZHKFVilg3", "ex.6rDRiWud-9UTbkd8PDkg3"],
-  "_note": "Live example (real Jason Argonaut consult IDs; run WITHOUT --mock). Faithful + medically sound -> should score high across dimensions."
+  "source_note_ids": ["exArVzMeT-ygdBnZHKFVilg3"],
+  "_note": "Live example (real Jason Argonaut MATERA consult; run WITHOUT --mock). Hand-written summary that stands in for an Epic GenAI summary, grounded in the actual note content. Faithful + medically sound, including the not-applied confidence downgrade -> should score high across all dimensions."
 }
