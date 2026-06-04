@@ -132,8 +132,17 @@ relevant API key for substantive judgments.
 streamlit run app.py            # JURY_MODE / JURY_PANEL from the environment
 ```
 
-Top tabs select the section; the **Summary Explorer** (V1, 3a) has the ingested
-summaries in the left sidebar and a two-column body:
+A section selector across the top switches between **Overview**, **Summary
+Explorer**, and (soon) Jury Config / Live Judge.
+
+**Overview** — a cross-case dashboard: KPIs (cases, judged, avg overall, # with
+issues, # juror splits), avg-score and issue-count bar charts by dimension, and a
+sortable **case scorecard** (per-dimension scores, low values shaded red). The
+*With issues* KPI filters the scorecard to just those cases, and selecting a row
+opens that case in the Explorer.
+
+**Summary Explorer** (V1, 3a) has the ingested summaries in the left sidebar and
+a two-column body (independently scrollable):
 - **col 1 — summary + judge synopsis**: the summary (with flagged spans
   highlighted), then per-dimension score, **disagreement** (agreement badge +
   each juror's score and one-line synopsis), and **structured, source-linked
@@ -146,7 +155,7 @@ Epic note IDs, **pasted note text**, or a mix — the pasted path is a first-cla
 escape hatch so the whole pipeline is demonstrable without FHIR. (A disabled
 "fetch a summary by Epic ID" field marks the future provenance pathway.) In stub
 mode the app is fully offline; `JURY_MODE=live` (+ keys) fetches notes by ID and
-renders real judgments. Jury Config / Live Judge tabs are next (roadmap 3b / 3c).
+renders real judgments. Jury Config / Live Judge are next (roadmap 3b / 3c).
 
 ## Files
 

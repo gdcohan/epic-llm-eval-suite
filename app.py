@@ -71,7 +71,11 @@ def render_overview():
     cols[0].metric("Cases", k["cases"])
     cols[1].metric("Judged", k["judged"])
     cols[2].metric("Avg overall", "—" if k["avg_overall"] is None else k["avg_overall"])
-    cols[3].metric("With issues", k["with_issues"])
+    with cols[3]:
+        st.metric("With issues", k["with_issues"])
+        if st.button("show these »", key="filter_issues", disabled=not k["with_issues"]):
+            st.session_state.issues_only = True
+            st.rerun()
     cols[4].metric("Juror splits", k["splits"])
 
     if k["judged"] == 0:
@@ -88,7 +92,6 @@ def render_overview():
         if s["issues_by_dim"]:
             st.bar_chart(pd.DataFrame({"issues": s["issues_by_dim"]}))
 
-    st.caption("Case scorecard (lower = redder; sort by any column)")
     dims = s["dims"]
     col_order = ["case", "overall"] + dims + ["issues", "agreement"]
     df = pd.DataFrame(s["rows"])
@@ -96,6 +99,19 @@ def render_overview():
         if col not in df.columns:
             df[col] = None
     df = df[col_order]
+
+    issues_only = st.session_state.get("issues_only", False)
+    if issues_only:
+        df_display = df[pd.to_numeric(df["issues"], errors="coerce").fillna(0) > 0]
+        head, clear = st.columns([4, 1])
+        head.caption(f"Case scorecard — only the {len(df_display)} case(s) with issues")
+        if clear.button("× show all"):
+            st.session_state.issues_only = False
+            st.rerun()
+    else:
+        df_display = df
+        st.caption("Case scorecard (lower = redder; sort any column; click a row to open it)")
+
     score_cols = ["overall"] + dims
 
     def _style(val):
@@ -103,21 +119,26 @@ def render_overview():
             return ""
         return f"background-color: {_score_color(val)}; color: white"
 
-    styler = df.style
+    styler = df_display.style
     styler = styler.map(_style, subset=score_cols) if hasattr(styler, "map") \
         else styler.applymap(_style, subset=score_cols)
     styler = styler.format(precision=2)
 
     event = st.dataframe(styler, hide_index=True, width="stretch",
                          on_select="rerun", selection_mode="single-row", key="scorecard")
+    sel_rows = []
     try:
-        sel_rows = event.selection["rows"]
+        sel_rows = list(event.selection.rows)
     except Exception:
-        sel_rows = []
+        try:
+            sel_rows = list(event["selection"]["rows"])
+        except Exception:
+            sel_rows = []
     if sel_rows:
-        cid = df.iloc[sel_rows[0]]["case"]
-        st.session_state.selected_case = cid
-        st.info(f"Selected **{cid}** — open the **Summary Explorer** tab to view it.")
+        st.session_state.selected_case = df_display.iloc[sel_rows[0]]["case"]
+        st.session_state.nav = "Summary Explorer"
+        st.session_state.pop("scorecard", None)  # clear selection so we don't bounce back
+        st.rerun()
 
 
 # --------------------------------------------------------------- header
@@ -316,16 +337,22 @@ def render_explorer():
 # --------------------------------------------------------------- main
 def main():
     render_header()
-    tab_overview, tab_explorer, tab_config, tab_live = st.tabs(
-        ["Overview", "Summary Explorer", "Jury Config", "Live Judge"]
-    )
-    with tab_overview:
+    NAV = ["Overview", "Summary Explorer", "Jury Config", "Live Judge"]
+    if st.session_state.get("nav") not in NAV:
+        st.session_state.nav = "Overview"
+    # Server-side section selector (not st.tabs) so we can switch programmatically
+    # — e.g. clicking a row in the Overview scorecard jumps to the Explorer.
+    choice = st.radio("section", NAV, index=NAV.index(st.session_state.nav),
+                      horizontal=True, label_visibility="collapsed")
+    st.session_state.nav = choice
+    st.divider()
+    if choice == "Overview":
         render_overview()
-    with tab_explorer:
+    elif choice == "Summary Explorer":
         render_explorer()
-    with tab_config:
+    elif choice == "Jury Config":
         st.info("**Jury Config** — edit dimensions / prompts / panel. Roadmap 3b.")
-    with tab_live:
+    else:
         st.info("**Live Judge** — ad-hoc summary + notes, break-it-live. Roadmap 3c.")
 
 
