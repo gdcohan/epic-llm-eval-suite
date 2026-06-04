@@ -33,7 +33,11 @@ DEFAULT_PERSONAS = [
     ("lenient", 0.6, "Be a charitable reviewer who rewards intent."),
 ]
 
-_DEFAULT_MODELS = {"anthropic": "claude-sonnet-4-6", "openai": "gpt-4o"}
+_DEFAULT_MODELS = {
+    "anthropic": "claude-sonnet-4-6",
+    "openai": "gpt-4o",
+    "gemini": "gemini-2.5-pro",
+}
 
 
 def _default_model(provider):

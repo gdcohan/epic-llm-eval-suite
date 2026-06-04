@@ -81,12 +81,12 @@ the jurors split on. For a real *jury* you want genuine diversity -- same-model
 personas tend to agree, so set a **cross-vendor panel**:
 
 ```bash
-JURY_MODE=live JURY_PANEL="anthropic:claude-sonnet-4-6,openai:gpt-4o" \
+JURY_MODE=live JURY_PANEL="anthropic:claude-sonnet-4-6,gemini:gemini-2.5-pro" \
   python main.py judge-case --case examples/cases/matera_flawed.json
 ```
 
-Providers are pluggable (`llm_providers.py`): OpenAI, Anthropic, and an offline
-Stub ship today.
+Providers are pluggable (`llm_providers.py`): Anthropic, OpenAI, Gemini, and an
+offline Stub ship today.
 
 ## Setup
 

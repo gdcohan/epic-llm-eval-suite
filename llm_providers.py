@@ -1,8 +1,9 @@
 """Pluggable LLM providers behind a single complete_json() interface.
 
-Ships OpenAI + Anthropic adapters (so spanning vendors is one config change) plus
-a deterministic Stub provider so the whole pipeline runs offline with no keys.
-SDK imports are lazy: a missing SDK only errors if you actually use that provider.
+Ships OpenAI + Anthropic + Gemini adapters (so spanning vendors is one config
+change) plus a deterministic Stub provider so the whole pipeline runs offline
+with no keys. SDK imports are lazy: a missing SDK only errors if you actually
+use that provider.
 """
 
 import os
@@ -59,6 +60,30 @@ class AnthropicProvider(LLMProvider):
         return _loads_lenient(text)
 
 
+class GeminiProvider(LLMProvider):
+    name = "gemini"
+
+    def __init__(self):
+        from google import genai  # lazy (pip install google-genai)
+
+        self._genai = genai
+        self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
+
+    def complete_json(self, system, user, model, temperature):
+        from google.genai import types
+
+        resp = self.client.models.generate_content(
+            model=model,
+            contents=user,
+            config=types.GenerateContentConfig(
+                system_instruction=system + "\n\nRespond with ONLY a single valid JSON object.",
+                temperature=temperature,
+                response_mime_type="application/json",
+            ),
+        )
+        return _loads_lenient(resp.text)
+
+
 class StubProvider(LLMProvider):
     """Deterministic offline provider for demos/tests (no network/keys)."""
 
@@ -90,6 +115,7 @@ def _loads_lenient(text):
 _REGISTRY = {
     "openai": OpenAIProvider,
     "anthropic": AnthropicProvider,
+    "gemini": GeminiProvider,
     "stub": StubProvider,
 }
 
@@ -97,7 +123,7 @@ _CACHE = {}
 
 
 def get_provider(name):
-    """Return a cached provider instance by name ('openai'|'anthropic'|'stub')."""
+    """Return a cached provider instance by name ('openai'|'anthropic'|'gemini'|'stub')."""
     if name not in _REGISTRY:
         raise ValueError(f"Unknown provider '{name}'. Options: {list(_REGISTRY)}")
     if name not in _CACHE:
