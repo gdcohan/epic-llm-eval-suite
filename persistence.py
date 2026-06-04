@@ -6,6 +6,7 @@ import json
 
 NOTES_DIR = os.path.join("data", "notes")
 VERDICTS_DIR = os.path.join("data", "verdicts")
+ADJUDICATIONS_DIR = os.path.join("data", "adjudications")
 
 
 def _safe(name):
@@ -50,4 +51,15 @@ def save_verdict(verdict, base_dir=VERDICTS_DIR):
 def load_verdict(name, base_dir=VERDICTS_DIR):
     """Return a persisted verdict by case id / name, or None."""
     path = os.path.join(base_dir, f"{_safe(name)}.json")
+    return load_note(path) if os.path.exists(path) else None
+
+
+def save_adjudication(adj, base_dir=ADJUDICATIONS_DIR):
+    """Persist a human adjudication (kept separate from the jury verdict)."""
+    return _write_json(os.path.join(base_dir, f"{_safe(adj['case_id'])}.json"), adj)
+
+
+def load_adjudication(case_id, base_dir=ADJUDICATIONS_DIR):
+    """Return a persisted human adjudication by case id, or None."""
+    path = os.path.join(base_dir, f"{_safe(case_id)}.json")
     return load_note(path) if os.path.exists(path) else None

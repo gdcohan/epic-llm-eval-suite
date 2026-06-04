@@ -148,6 +148,9 @@ a two-column body (independently scrollable):
   each juror's score and one-line synopsis), and **structured, source-linked
   findings** — "summary said *X*, note *N* says *Y*" with a **↪ source** button
   that opens the cited note and highlights the span.
+  Plus **✎ Adjudicate** — set a final per-dimension human score (e.g. resolve a
+  2-vs-4 split as a 4). Adjudications are stored separately from the jury verdict,
+  survive re-runs, and become the ground-truth labels for the future calibrator.
 - **col 2 — reference notes**: each expandable to cleaned text (+ raw FHIR).
 
 **➕ New summary** creates a case from a summary plus reference notes given as

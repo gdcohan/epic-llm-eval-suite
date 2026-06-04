@@ -93,7 +93,7 @@ def render_overview():
             st.bar_chart(pd.DataFrame({"issues": s["issues_by_dim"]}))
 
     dims = s["dims"]
-    col_order = ["case", "overall"] + dims + ["issues", "agreement"]
+    col_order = ["case", "overall"] + dims + ["issues", "adjudicated", "agreement"]
     df = pd.DataFrame(s["rows"])
     for col in col_order:
         if col not in df.columns:
@@ -232,6 +232,9 @@ def render_summary_and_verdict(case):
     st.markdown("**Judge synopsis** &nbsp; overall " + _badge(f"{overall} / 5", _score_color(overall)),
                 unsafe_allow_html=True)
 
+    adj = service.get_adjudication(case["case_id"]) or {}
+    adj_dims = adj.get("dimensions", {})
+
     for d in verdict["dimensions"]:
         score_badge = _badge(f"{d.get('mean_score')} / {d.get('scale')}", _score_color(d.get("mean_score")))
         agree_badge = _AGREEMENT_BADGE.get(d.get("agreement"), "")
@@ -240,6 +243,9 @@ def render_summary_and_verdict(case):
             f"<small>(spread {d.get('score_spread')})</small>",
             unsafe_allow_html=True,
         )
+        if d["dimension"] in adj_dims:
+            st.markdown(_badge(f"✎ adjudicated {adj_dims[d['dimension']]}", "#1565c0")
+                        + f" <small>(jury {d.get('mean_score')})</small>", unsafe_allow_html=True)
         # Structured dispute: each juror's score + one-line synopsis.
         for v in d.get("verdicts", []):
             if v.get("error"):
@@ -266,6 +272,26 @@ def render_summary_and_verdict(case):
                 if f.get("note_id") and f.get("note_quote"):
                     st.button("↪ source", key=f"src_{d['dimension']}_{i}",
                               on_click=_focus_note, args=(f["note_id"], f["note_quote"]))
+
+    with st.expander("✎ Adjudicate (human override)"):
+        st.caption("Set a final per-dimension score; kept separate from the jury and survives re-runs.")
+        with st.form(f"adjudicate_{case['case_id']}"):
+            adjudicator = st.text_input("Adjudicator", value=adj.get("adjudicator", ""))
+            new_scores = {}
+            for d in verdict["dimensions"]:
+                dim = d["dimension"]
+                opts = ["— (use jury)", 1, 2, 3, 4, 5]
+                cur = adj_dims.get(dim)
+                idx = opts.index(cur) if cur in opts else 0
+                choice = st.selectbox(f"{dim} — jury {d.get('mean_score')}", opts, index=idx,
+                                      key=f"adjsel_{case['case_id']}_{dim}")
+                if choice != "— (use jury)":
+                    new_scores[dim] = int(choice)
+            rationale = st.text_area("Rationale", value=adj.get("rationale", ""))
+            if st.form_submit_button("Save decision"):
+                service.set_adjudication(case["case_id"], adjudicator, rationale, new_scores)
+                st.success("Saved.")
+                st.rerun()
 
 
 # ----------------------------------------------------- reference notes

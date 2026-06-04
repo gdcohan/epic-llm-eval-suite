@@ -11,6 +11,7 @@ import glob
 import json
 import uuid
 from collections import defaultdict
+from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 
@@ -162,6 +163,25 @@ def load_verdict(case_id):
     return persistence.load_verdict(case_id)
 
 
+# ----------------------------------------------------------- adjudication
+def get_adjudication(case_id):
+    return persistence.load_adjudication(case_id)
+
+
+def set_adjudication(case_id, adjudicator, rationale, dimensions):
+    """Record a human's per-dimension overrides (kept separate from the jury).
+    `dimensions` maps dimension name -> human score; empty/None entries dropped."""
+    adj = {
+        "case_id": case_id,
+        "adjudicator": (adjudicator or "").strip(),
+        "adjudicated_at": datetime.now(timezone.utc).isoformat(),
+        "rationale": (rationale or "").strip(),
+        "dimensions": {k: v for k, v in (dimensions or {}).items() if v is not None},
+    }
+    persistence.save_adjudication(adj)
+    return adj
+
+
 def overview_stats():
     """Aggregate stats across all cases for the Overview dashboard."""
     cases = list_cases()
@@ -177,18 +197,22 @@ def overview_stats():
             continue
         n_judged += 1
         splits = verdict.get("split_dimensions") or []
+        adj_dims = (persistence.load_adjudication(c["case_id"]) or {}).get("dimensions", {})
         row = {"case": c["case_id"], "overall": verdict.get("overall_score"),
                "issues": 0, "agreement": "split" if splits else "agreed", "judged": True}
         for d in verdict.get("dimensions", []):
             name = d["dimension"]
             if name not in dims_order:
                 dims_order.append(name)
-            row[name] = d.get("mean_score")
-            if isinstance(d.get("mean_score"), (int, float)):
-                dim_scores[name].append(d["mean_score"])
+            # human-final score: adjudicated override if present, else jury mean
+            final = adj_dims.get(name, d.get("mean_score"))
+            row[name] = final
+            if isinstance(final, (int, float)):
+                dim_scores[name].append(final)
             n_iss = sum(1 for f in d.get("findings", []) if f.get("type") == "issue")
             dim_issues[name] += n_iss
             row["issues"] += n_iss
+        row["adjudicated"] = ("✎ " + ", ".join(sorted(adj_dims))) if adj_dims else ""
         rows.append(row)
 
     overalls = [r["overall"] for r in rows if isinstance(r.get("overall"), (int, float))]
