@@ -211,7 +211,7 @@ def render_reference_notes(case):
             st.markdown(_highlight(note.get("combined_text") or "(empty)", quotes),
                         unsafe_allow_html=True)
             if not manual and note.get("raw_document_reference"):
-                with st.expander("raw FHIR DocumentReference"):
+                if st.checkbox("raw FHIR DocumentReference", key=f"raw_{nid}"):
                     st.json(note["raw_document_reference"])
 
 
@@ -248,9 +248,11 @@ def render_explorer():
     case = service.load_case(meta["path"])
     col1, col2 = st.columns(2)
     with col1:
-        render_summary_and_verdict(case)
+        with st.container(height=760):
+            render_summary_and_verdict(case)
     with col2:
-        render_reference_notes(case)
+        with st.container(height=760):
+            render_reference_notes(case)
 
 
 # --------------------------------------------------------------- main
