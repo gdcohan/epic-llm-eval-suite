@@ -103,7 +103,7 @@ def _build_messages(dimension, source_text, candidate_summary, member, source_gu
     # .replace (not .format) so a user-edited contract with literal braces is safe.
     contract = output_contract.replace("{scale}", str(dimension.scale))
     system = "\n\n".join(
-        filter(None, [member.persona, dimension.prompt, source_guidance, contract])
+        filter(None, [dimension.prompt, member.persona, source_guidance, contract])
     )
     user = (
         "=== SOURCE NOTES (ground truth, oldest first) ===\n"

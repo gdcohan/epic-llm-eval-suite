@@ -495,7 +495,7 @@ def _render_show_prompt():
         pp = next((p for p in personas if (p.get("name") or "unnamed") == ppick), None)
         persona_text = pp.get("text", "") if pp else ""
     contract = config.active_output_contract().replace("{scale}", str(d.scale))
-    system = "\n\n".join(filter(None, [persona_text, d.prompt, config.active_source_guidance(), contract]))
+    system = "\n\n".join(filter(None, [d.prompt, persona_text, config.active_source_guidance(), contract]))
     st.caption("Exactly what this juror gets as the system prompt (notes + summary are the user message):")
     st.code(system)
 
@@ -508,9 +508,10 @@ def render_jury_config():
     _render_models()
     st.divider()
     _render_shared_text(
-        "Recency guidance (shared)",
-        "Prepended to every dimension. Governs how jurors reconcile notes that disagree across time.",
-        config.active_source_guidance, config.save_source_guidance, config.reset_source_guidance, 140)
+        "Reconciliation guidance (shared)",
+        "How jurors should reconcile notes that conflict (temporal, status/certainty, "
+        "authority, specificity, repeated measures, clear error) before scoring.",
+        config.active_source_guidance, config.save_source_guidance, config.reset_source_guidance, 260)
     st.divider()
     _render_shared_text(
         "Output contract (shared)",
