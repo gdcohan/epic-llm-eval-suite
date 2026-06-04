@@ -132,6 +132,14 @@ relevant API key for substantive judgments.
 streamlit run app.py            # JURY_MODE / JURY_PANEL from the environment
 ```
 
+Populate five sample lifespan cases (annual-visit patients aged 12/25/40/65/80,
+with summaries of deliberately varying fidelity to their notes — some faithful,
+some with planted accuracy/comprehensiveness/correctness/reconciliation errors):
+
+```bash
+python examples/generate_demo_cases.py
+```
+
 A section selector across the top switches between **Overview**, **Summary
 Explorer**, and (soon) Jury Config / Live Judge.
 
