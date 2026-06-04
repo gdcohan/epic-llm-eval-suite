@@ -74,10 +74,19 @@ clause tells jurors to treat the **more recent** note as authoritative when
 notes conflict (unless it's clearly erroneous), so a summary reflecting the
 current picture isn't penalized for "contradicting" a superseded older note.
 
-Each dimension is judged by multiple panel members
-(provider/model/temperature/persona) and averaged, then rolled up to an overall
-score. Providers are pluggable (`llm_providers.py`): OpenAI and Anthropic
-adapters ship today; spanning vendors is one config line.
+Each dimension is judged by every panel member and aggregated: per-dimension
+mean **plus disagreement** (score spread + an agreement label: unanimous / minor
+/ split) and the jurors' flagged issues; the verdict also lists which dimensions
+the jurors split on. For a real *jury* you want genuine diversity -- same-model
+personas tend to agree, so set a **cross-vendor panel**:
+
+```bash
+JURY_MODE=live JURY_PANEL="anthropic:claude-sonnet-4-6,openai:gpt-4o" \
+  python main.py judge-case --case examples/cases/matera_flawed.json
+```
+
+Providers are pluggable (`llm_providers.py`): OpenAI, Anthropic, and an offline
+Stub ship today.
 
 ## Setup
 

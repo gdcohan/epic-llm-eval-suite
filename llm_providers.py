@@ -65,11 +65,12 @@ class StubProvider(LLMProvider):
     name = "stub"
 
     def complete_json(self, system, user, model, temperature):
-        # Mildly varied but deterministic so aggregation is observable.
-        score = 3 + (len(user) + int(temperature * 10)) % 3
+        # Deterministic, and varied by temperature so juror disagreement is
+        # observable offline (real judgments need JURY_MODE=live + a key).
+        score = max(1, min(5, round(2 + temperature * 4)))
         return {
             "score": score,
-            "rationale": "[stub verdict] Offline placeholder; wire a real provider/API key for substantive judgments.",
+            "rationale": "[stub verdict] Offline placeholder; set JURY_MODE=live with an API key for substantive judgments.",
             "supporting_evidence": [],
             "issues": [],
         }
