@@ -9,6 +9,7 @@ encounter, security labels).
 
 import base64
 import re
+import uuid
 from datetime import datetime, timezone
 from html.parser import HTMLParser
 
@@ -310,4 +311,48 @@ def extract_note(resource, client=None, resolved_via=None, original_id=None, res
         "combined_text": combined_text,
         "related": related,
         "raw_document_reference": resource,
+    }
+
+
+def make_manual_note(text, note_type="Pasted note", date=None, note_id=None, title=None):
+    """Build a normalized note from pasted text (no FHIR), shaped exactly like
+    extract_note's output so the rest of the pipeline treats it identically.
+
+    The escape hatch for when fetching a note via FHIR isn't possible.
+    """
+    note_id = note_id or f"manual-{uuid.uuid4().hex[:8]}"
+    body = (text or "").strip()
+    return {
+        "input_id": note_id,
+        "document_reference_id": note_id,
+        "resolved_via": "manual",
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
+        "metadata": {
+            "type": note_type,
+            "category": [],
+            "status": None,
+            "doc_status": None,
+            "date": date,
+            "authors": [],
+            "authenticator": None,
+            "encounter": [],
+            "security_labels": [],
+            "identifiers": [],
+        },
+        "content": [
+            {
+                "content_type": "text/plain",
+                "format": None,
+                "title": title,
+                "language": None,
+                "source": "manual",
+                "url": None,
+                "text": body,
+                "clean_text": body,
+            }
+        ],
+        "primary_format": "text/plain",
+        "combined_text": body,
+        "related": [],
+        "raw_document_reference": None,
     }

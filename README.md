@@ -126,6 +126,21 @@ python main.py judge-case --case examples/cases/recency_demo.json --mock
 demonstrable with zero external dependencies. Set `JURY_MODE=live` plus the
 relevant API key for substantive judgments.
 
+## UI (Streamlit)
+
+```bash
+streamlit run app.py            # JURY_MODE / JURY_PANEL from the environment
+```
+
+**Summary Explorer** (V1, section 3a): browse ingested summaries (cases), see
+the jury verdict with per-dimension scores + **disagreement** and each juror's
+rationale, and view the reference notes (cleaned text + raw FHIR). **➕ New
+summary** creates a case from a summary plus reference notes provided as Epic
+note IDs, **pasted note text**, or a mix — the pasted-text path is a first-class
+escape hatch so the whole pipeline is demonstrable without FHIR. In stub mode the
+app is fully offline; `JURY_MODE=live` (+ keys) fetches notes by ID and renders
+real judgments. (Jury Config / Live Judge sections are next: roadmap 3b / 3c.)
+
 ## Files
 
 | File | Role |
@@ -137,6 +152,8 @@ relevant API key for substantive judgments.
 | `dimensions.py` | Jury dimensions (one prompt per jurist) + shared recency guidance |
 | `jury.py` | Panel runner, multi-note aggregation + scoring |
 | `cases.py` | Eval-case manifests (summary ↔ source note IDs) |
+| `service.py` | Service layer for CLI/UI: list/create/judge cases, gather notes |
+| `app.py` | Streamlit UI (Summary Explorer) |
 | `mock_client.py`, `mock_data/` | Offline fixtures for the demo |
 | `examples/cases/` | Sample eval cases (recency demo + MATERA faithful/flawed) |
 | `main.py` | CLI |

@@ -45,3 +45,9 @@ def save_verdict(verdict, base_dir=VERDICTS_DIR):
     ids = verdict.get("source_note_ids") or []
     name = verdict.get("case_id") or (ids[0] if ids else None) or "verdict"
     return _write_json(os.path.join(base_dir, f"{_safe(name)}.json"), verdict)
+
+
+def load_verdict(name, base_dir=VERDICTS_DIR):
+    """Return a persisted verdict by case id / name, or None."""
+    path = os.path.join(base_dir, f"{_safe(name)}.json")
+    return load_note(path) if os.path.exists(path) else None
