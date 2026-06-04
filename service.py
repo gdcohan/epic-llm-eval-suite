@@ -11,6 +11,10 @@ import glob
 import json
 import uuid
 
+from dotenv import load_dotenv
+
+load_dotenv()  # so JURY_MODE / JURY_PANEL / API keys in .env reach the UI too
+
 import cases
 import persistence
 from note_extractor import extract_note, make_manual_note
