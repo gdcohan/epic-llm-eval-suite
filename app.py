@@ -234,6 +234,10 @@ def render_summary_and_verdict(case):
 
     adj = service.get_adjudication(case["case_id"]) or {}
     adj_dims = adj.get("dimensions", {})
+    adj_rationales = adj.get("rationales", {})
+    adjudicator = st.text_input("Adjudicator", value=adj.get("adjudicator", ""),
+                                key=f"adjudicator_{case['case_id']}",
+                                placeholder="your name (for the overrides below)")
 
     for d in verdict["dimensions"]:
         score_badge = _badge(f"{d.get('mean_score')} / {d.get('scale')}", _score_color(d.get("mean_score")))
@@ -246,6 +250,8 @@ def render_summary_and_verdict(case):
         if d["dimension"] in adj_dims:
             st.markdown(_badge(f"✎ adjudicated {adj_dims[d['dimension']]}", "#1565c0")
                         + f" <small>(jury {d.get('mean_score')})</small>", unsafe_allow_html=True)
+            if adj_rationales.get(d["dimension"]):
+                st.caption(f"✎ {adj_rationales[d['dimension']]}")
         # Structured dispute: each juror's score + one-line synopsis.
         for v in d.get("verdicts", []):
             if v.get("error"):
@@ -273,25 +279,22 @@ def render_summary_and_verdict(case):
                     st.button("↪ source", key=f"src_{d['dimension']}_{i}",
                               on_click=_focus_note, args=(f["note_id"], f["note_quote"]))
 
-    with st.expander("✎ Adjudicate (human override)"):
-        st.caption("Set a final per-dimension score; kept separate from the jury and survives re-runs.")
-        with st.form(f"adjudicate_{case['case_id']}"):
-            adjudicator = st.text_input("Adjudicator", value=adj.get("adjudicator", ""))
-            new_scores = {}
-            for d in verdict["dimensions"]:
-                dim = d["dimension"]
+        # Per-dimension human adjudication (override just this dimension).
+        with st.expander(f"✎ adjudicate · {d['dimension']}"):
+            with st.form(f"adj_{case['case_id']}_{d['dimension']}"):
                 opts = ["— (use jury)", 1, 2, 3, 4, 5]
-                cur = adj_dims.get(dim)
+                cur = adj_dims.get(d["dimension"])
                 idx = opts.index(cur) if cur in opts else 0
-                choice = st.selectbox(f"{dim} — jury {d.get('mean_score')}", opts, index=idx,
-                                      key=f"adjsel_{case['case_id']}_{dim}")
-                if choice != "— (use jury)":
-                    new_scores[dim] = int(choice)
-            rationale = st.text_area("Rationale", value=adj.get("rationale", ""))
-            if st.form_submit_button("Save decision"):
-                service.set_adjudication(case["case_id"], adjudicator, rationale, new_scores)
-                st.success("Saved.")
-                st.rerun()
+                choice = st.selectbox(f"final score (jury {d.get('mean_score')})", opts, index=idx,
+                                      key=f"adjsel_{case['case_id']}_{d['dimension']}")
+                rationale = st.text_input("rationale", value=adj_rationales.get(d["dimension"], ""),
+                                          key=f"adjrat_{case['case_id']}_{d['dimension']}")
+                if st.form_submit_button("Save"):
+                    score = None if choice == "— (use jury)" else int(choice)
+                    service.set_dimension_adjudication(
+                        case["case_id"], d["dimension"], score, rationale, adjudicator)
+                    st.success("Saved.")
+                    st.rerun()
 
 
 # ----------------------------------------------------- reference notes

@@ -168,16 +168,23 @@ def get_adjudication(case_id):
     return persistence.load_adjudication(case_id)
 
 
-def set_adjudication(case_id, adjudicator, rationale, dimensions):
-    """Record a human's per-dimension overrides (kept separate from the jury).
-    `dimensions` maps dimension name -> human score; empty/None entries dropped."""
-    adj = {
-        "case_id": case_id,
-        "adjudicator": (adjudicator or "").strip(),
-        "adjudicated_at": datetime.now(timezone.utc).isoformat(),
-        "rationale": (rationale or "").strip(),
-        "dimensions": {k: v for k, v in (dimensions or {}).items() if v is not None},
-    }
+def set_dimension_adjudication(case_id, dimension, score, rationale, adjudicator):
+    """Set (or clear, when score is None) one dimension's human override, merging
+    into any existing adjudication. Keeps a per-dimension rationale."""
+    adj = persistence.load_adjudication(case_id) or {"case_id": case_id, "dimensions": {}, "rationales": {}}
+    adj.setdefault("dimensions", {})
+    adj.setdefault("rationales", {})
+    if score is None:
+        adj["dimensions"].pop(dimension, None)
+        adj["rationales"].pop(dimension, None)
+    else:
+        adj["dimensions"][dimension] = int(score)
+        if (rationale or "").strip():
+            adj["rationales"][dimension] = rationale.strip()
+        else:
+            adj["rationales"].pop(dimension, None)
+    adj["adjudicator"] = (adjudicator or "").strip()
+    adj["adjudicated_at"] = datetime.now(timezone.utc).isoformat()
     persistence.save_adjudication(adj)
     return adj
 
