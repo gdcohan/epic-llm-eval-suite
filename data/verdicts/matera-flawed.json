@@ -1,0 +1,416 @@
+{
+  "case_id": "matera-flawed",
+  "source_note_ids": [
+    "ex.6rDRiWud-9UTbkd8PDkg3",
+    "eY4KXcuJZ8gR9OCeC58271A3",
+    "exArVzMeT-ygdBnZHKFVilg3",
+    "eaibpvCkNL9BzrSwueTYNQg3"
+  ],
+  "num_notes": 4,
+  "judged_at": "2026-06-04T13:22:02.740350+00:00",
+  "panel": [
+    "anthropic:claude-sonnet-4-6",
+    "gemini:gemini-2.5-pro"
+  ],
+  "panel_members": [
+    {
+      "name": "anthropic:claude-sonnet-4-6",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4-6",
+      "temperature": 0.2
+    },
+    {
+      "name": "gemini:gemini-2.5-pro",
+      "provider": "gemini",
+      "model": "gemini-2.5-pro",
+      "temperature": 0.2
+    }
+  ],
+  "overall_score": 1.0,
+  "max_disagreement": 0,
+  "split_dimensions": [],
+  "dimensions": [
+    {
+      "dimension": "accuracy",
+      "description": "Every claim in the summary is supported by the source notes.",
+      "scale": "1-5",
+      "mean_score": 1.0,
+      "min_score": 1,
+      "max_score": 1,
+      "score_spread": 0,
+      "score_stdev": 0.0,
+      "agreement": "unanimous",
+      "issues": [
+        {
+          "member": "anthropic:claude-sonnet-4-6",
+          "issue": "Summary claims assessments 'improved over the course of the day' \u2014 the most recent note shows worsening (BP 200/100, 5 symptoms, Composite Score 1.000 Severe)"
+        },
+        {
+          "member": "anthropic:claude-sonnet-4-6",
+          "issue": "Summary claims the most recent reading was 'reassuring' with 'mildly elevated blood pressure' \u2014 the most recent BP is 200/100, classified as ACOG Stage 2 Severe"
+        },
+        {
+          "member": "anthropic:claude-sonnet-4-6",
+          "issue": "Summary claims 'no symptoms' in the most recent reading \u2014 the most recent note documents 5 symptoms with a PREECLAMPSIA FLAG"
+        },
+        {
+          "member": "anthropic:claude-sonnet-4-6",
+          "issue": "Summary claims the system downgraded her to Moderate risk \u2014 the most recent note maintains Severe with no downgrade noted"
+        },
+        {
+          "member": "anthropic:claude-sonnet-4-6",
+          "issue": "Summary fabricates a clinical intervention: 'nifedipine to lower her blood sugar' \u2014 no medications are mentioned in any source note, and the stated indication (blood sugar) is clinically incorrect for nifedipine"
+        },
+        {
+          "member": "gemini:gemini-2.5-pro",
+          "issue": {
+            "issue": "The summary claims the patient's condition improved, but the source notes show it worsened.",
+            "type": "contradiction"
+          }
+        },
+        {
+          "member": "gemini:gemini-2.5-pro",
+          "issue": {
+            "issue": "The summary describes the most recent blood pressure as 'mildly elevated', but the source notes classify the BP of 200/100 as 'Severe' and exceeding the 'ACOG Stage 2 threshold'.",
+            "type": "contradiction"
+          }
+        },
+        {
+          "member": "gemini:gemini-2.5-pro",
+          "issue": {
+            "issue": "The summary claims the patient had 'no symptoms' in the most recent reading, but the source notes state '5 symptoms detected'.",
+            "type": "contradiction"
+          }
+        },
+        {
+          "member": "gemini:gemini-2.5-pro",
+          "issue": {
+            "issue": "The summary claims the system downgraded the patient to 'Moderate risk', but the most recent source note states 'Severity: Severe'.",
+            "type": "contradiction"
+          }
+        },
+        {
+          "member": "gemini:gemini-2.5-pro",
+          "issue": {
+            "issue": "The summary fabricates that the patient was started on nifedipine.",
+            "type": "fabrication"
+          }
+        },
+        {
+          "member": "gemini:gemini-2.5-pro",
+          "issue": {
+            "issue": "The summary fabricates that the purpose of nifedipine was to lower blood sugar, which is also medically incorrect.",
+            "type": "fabrication"
+          }
+        }
+      ],
+      "verdicts": [
+        {
+          "member": "anthropic:claude-sonnet-4-6",
+          "provider": "anthropic",
+          "model": "claude-sonnet-4-6",
+          "score": 1,
+          "rationale": "The candidate summary contains multiple critical inaccuracies that directly contradict the source notes. The most recent assessment (18:05) shows worsening, not improvement: BP 200/100, 5 symptoms detected, Composite Score 1.000, Severe rating with a PREECLAMPSIA FLAG. The summary falsely claims the most recent reading was 'reassuring' with 'mildly elevated blood pressure and no symptoms.' The claim that the system downgraded her to Moderate risk is unsupported \u2014 the most recent note has no confidence-weighted downgrade listed and maintains Severe severity. Additionally, 'nifedipine to lower her blood sugar' is a fabricated clinical intervention (nifedipine is an antihypertensive, not a blood sugar medication, and no medication administration is mentioned anywhere in the source notes). Nearly every substantive claim in the summary is either fabricated or directly contradicted by the source.",
+          "supporting_evidence": [
+            "Note 4 (most recent, 18:05): 'Severity: Severe', 'Composite Score: 1.000', 'BP 200/100 exceeds ACOG Stage 2 threshold', '5 symptoms detected [PREECLAMPSIA FLAG]'",
+            "Note 4: 'Gestational: Severe \u2014 stage=second_trimester'",
+            "Note 4 has no confidence-weighted downgrade entry, unlike earlier notes",
+            "No mention of nifedipine or any medication in any of the four source notes",
+            "Note 2 (15:09): '0 symptoms detected' \u2014 this is the only note with no symptoms, but it is not the most recent"
+          ],
+          "issues": [
+            "Summary claims assessments 'improved over the course of the day' \u2014 the most recent note shows worsening (BP 200/100, 5 symptoms, Composite Score 1.000 Severe)",
+            "Summary claims the most recent reading was 'reassuring' with 'mildly elevated blood pressure' \u2014 the most recent BP is 200/100, classified as ACOG Stage 2 Severe",
+            "Summary claims 'no symptoms' in the most recent reading \u2014 the most recent note documents 5 symptoms with a PREECLAMPSIA FLAG",
+            "Summary claims the system downgraded her to Moderate risk \u2014 the most recent note maintains Severe with no downgrade noted",
+            "Summary fabricates a clinical intervention: 'nifedipine to lower her blood sugar' \u2014 no medications are mentioned in any source note, and the stated indication (blood sugar) is clinically incorrect for nifedipine"
+          ]
+        },
+        {
+          "member": "gemini:gemini-2.5-pro",
+          "provider": "gemini",
+          "model": "gemini-2.5-pro",
+          "score": 1,
+          "rationale": "The summary is completely inaccurate and contradicts the source notes on every point. It falsely claims the patient's condition improved when it actually worsened (BP and symptom count increased). It misrepresents the final reading as 'reassuring' with 'mildly elevated blood pressure with no symptoms,' while the source shows severely elevated BP (200/100) and five symptoms. It incorrectly states the patient was downgraded to 'Moderate risk' when the final assessment is 'Severe.' Lastly, it fabricates a medication (nifedipine) and its purpose (to lower blood sugar), neither of which is mentioned in the notes.",
+          "supporting_evidence": [
+            {
+              "summary_claim": "The patient's MATERA assessments improved over the course of the day.",
+              "source_evidence": "Note 1: 'BP 195/120', '3 symptoms detected'. Note 4: 'BP 200/100', '5 symptoms detected'."
+            },
+            {
+              "summary_claim": "The most recent reading was reassuring - mildly elevated blood pressure with no symptoms...",
+              "source_evidence": "Note 4: 'Risk: Severe \u2014 BP 200/100 exceeds ACOG Stage 2 threshold', 'Symptom: Severe \u2014 5 symptoms detected'"
+            },
+            {
+              "summary_claim": "...and the system downgraded her to Moderate risk.",
+              "source_evidence": "Note 4: 'Severity: Severe'"
+            },
+            {
+              "summary_claim": "She was started on nifedipine to lower her blood sugar.",
+              "source_evidence": "The source notes contain no mention of nifedipine or blood sugar management."
+            }
+          ],
+          "issues": [
+            {
+              "issue": "The summary claims the patient's condition improved, but the source notes show it worsened.",
+              "type": "contradiction"
+            },
+            {
+              "issue": "The summary describes the most recent blood pressure as 'mildly elevated', but the source notes classify the BP of 200/100 as 'Severe' and exceeding the 'ACOG Stage 2 threshold'.",
+              "type": "contradiction"
+            },
+            {
+              "issue": "The summary claims the patient had 'no symptoms' in the most recent reading, but the source notes state '5 symptoms detected'.",
+              "type": "contradiction"
+            },
+            {
+              "issue": "The summary claims the system downgraded the patient to 'Moderate risk', but the most recent source note states 'Severity: Severe'.",
+              "type": "contradiction"
+            },
+            {
+              "issue": "The summary fabricates that the patient was started on nifedipine.",
+              "type": "fabrication"
+            },
+            {
+              "issue": "The summary fabricates that the purpose of nifedipine was to lower blood sugar, which is also medically incorrect.",
+              "type": "fabrication"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dimension": "comprehensiveness",
+      "description": "The summary captures all clinically significant information.",
+      "scale": "1-5",
+      "mean_score": 1.0,
+      "min_score": 1,
+      "max_score": 1,
+      "score_spread": 0,
+      "score_stdev": 0.0,
+      "agreement": "unanimous",
+      "issues": [
+        {
+          "member": "anthropic:claude-sonnet-4-6",
+          "issue": "Falsely states assessments improved; the most recent note shows worsening severity (BP 200/100, 5 symptoms, Severe with no downgrade)"
+        },
+        {
+          "member": "anthropic:claude-sonnet-4-6",
+          "issue": "Falsely states the most recent reading was reassuring with no symptoms; Note 4 documents 5 severe symptoms with PREECLAMPSIA FLAG"
+        },
+        {
+          "member": "anthropic:claude-sonnet-4-6",
+          "issue": "Falsely states the system downgraded to Moderate risk; Note 4 has no downgrade"
+        },
+        {
+          "member": "anthropic:claude-sonnet-4-6",
+          "issue": "Fabricates nifedipine as a medication \u2014 not mentioned in any source note"
+        },
+        {
+          "member": "anthropic:claude-sonnet-4-6",
+          "issue": "States nifedipine was given to lower 'blood sugar' \u2014 clinically nonsensical and not supported by any note"
+        },
+        {
+          "member": "anthropic:claude-sonnet-4-6",
+          "issue": "Omits critical safety information: PREECLAMPSIA FLAG, second trimester gestational stage, edema, shortness of breath, visual disturbance, headache, nausea"
+        },
+        {
+          "member": "gemini:gemini-2.5-pro",
+          "issue": {
+            "category": "Omission",
+            "description": "Omitted the final severe blood pressure of 200/100."
+          }
+        },
+        {
+          "member": "gemini:gemini-2.5-pro",
+          "issue": {
+            "category": "Omission",
+            "description": "Omitted the five symptoms of preeclampsia from the final assessment (edema, headache, nausea, shortness_of_breath, visual_disturbance)."
+          }
+        },
+        {
+          "member": "gemini:gemini-2.5-pro",
+          "issue": {
+            "category": "Omission",
+            "description": "Omitted the consistent \"Severe\" risk rating and the PREECLAMPSIA FLAG."
+          }
+        },
+        {
+          "member": "gemini:gemini-2.5-pro",
+          "issue": {
+            "category": "Accuracy",
+            "description": "Incorrectly stated the patient's condition improved when it worsened."
+          }
+        },
+        {
+          "member": "gemini:gemini-2.5-pro",
+          "issue": {
+            "category": "Accuracy",
+            "description": "Incorrectly described the final BP as \"mildly elevated\" and symptoms as absent."
+          }
+        },
+        {
+          "member": "gemini:gemini-2.5-pro",
+          "issue": {
+            "category": "Accuracy",
+            "description": "Incorrectly stated the risk was downgraded to \"Moderate\"."
+          }
+        },
+        {
+          "member": "gemini:gemini-2.5-pro",
+          "issue": {
+            "category": "Hallucination",
+            "description": "Fabricated the administration of nifedipine and incorrectly stated its purpose was to lower blood sugar."
+          }
+        }
+      ],
+      "verdicts": [
+        {
+          "member": "anthropic:claude-sonnet-4-6",
+          "provider": "anthropic",
+          "model": "claude-sonnet-4-6",
+          "score": 1,
+          "rationale": "The candidate summary is clinically dangerous and factually inverted. The most recent (authoritative) note from 18:05 shows BP 200/100, 5 symptoms including edema, headache, nausea, shortness of breath, and visual disturbance, a composite score of 1.000, a PREECLAMPSIA FLAG, and Severe classification with no downgrade. The summary falsely claims the assessments 'improved,' that the most recent reading was 'reassuring,' that BP was 'mildly elevated,' that there were 'no symptoms,' and that the system downgraded to Moderate risk. Additionally, the summary invents a medication (nifedipine) that appears nowhere in the source notes, and incorrectly states it was given to 'lower blood sugar' rather than blood pressure. Every clinically significant element is either wrong, fabricated, or omitted.",
+          "supporting_evidence": [
+            "Note 4 (most recent, 18:05): BP 200/100, Composite Score 1.000, Severity: Severe, 5 symptoms: edema, headache, nausea, shortness_of_breath, visual_disturbance, [PREECLAMPSIA FLAG]",
+            "Note 4: No confidence-weighted downgrade listed; severity remains Severe",
+            "Summary claims: 'assessments improved over the course of the day' \u2014 contradicted by Note 4 showing worsening BP (200/100) and more symptoms (5)",
+            "Summary claims: 'most recent reading was reassuring - mildly elevated blood pressure with no symptoms' \u2014 directly contradicted by Note 4",
+            "Summary claims: 'system downgraded her to Moderate risk' \u2014 no downgrade in Note 4",
+            "Summary claims: 'started on nifedipine to lower her blood sugar' \u2014 nifedipine not mentioned anywhere in source notes; 'blood sugar' is a factual error"
+          ],
+          "issues": [
+            "Falsely states assessments improved; the most recent note shows worsening severity (BP 200/100, 5 symptoms, Severe with no downgrade)",
+            "Falsely states the most recent reading was reassuring with no symptoms; Note 4 documents 5 severe symptoms with PREECLAMPSIA FLAG",
+            "Falsely states the system downgraded to Moderate risk; Note 4 has no downgrade",
+            "Fabricates nifedipine as a medication \u2014 not mentioned in any source note",
+            "States nifedipine was given to lower 'blood sugar' \u2014 clinically nonsensical and not supported by any note",
+            "Omits critical safety information: PREECLAMPSIA FLAG, second trimester gestational stage, edema, shortness of breath, visual disturbance, headache, nausea"
+          ]
+        },
+        {
+          "member": "gemini:gemini-2.5-pro",
+          "provider": "gemini",
+          "model": "gemini-2.5-pro",
+          "score": 1,
+          "rationale": "The summary is dangerously inaccurate and omits all clinically significant information from the source notes. It incorrectly states that the patient's condition improved, that her final blood pressure was only mildly elevated with no symptoms, and that her risk was downgraded to moderate. In reality, the source notes show a worsening condition with a final BP of 200/100, five symptoms concerning for preeclampsia, and a consistent \"Severe\" risk assessment. The summary also fabricates a medication (nifedipine) and incorrectly states its purpose.",
+          "supporting_evidence": [
+            {
+              "from": "CANDIDATE SUMMARY",
+              "text": "The patient's MATERA assessments improved over the course of the day. The most recent reading was reassuring - mildly elevated blood pressure with no symptoms - and the system downgraded her to Moderate risk."
+            },
+            {
+              "from": "SOURCE NOTES",
+              "text": "Most recent assessment (Note 4): Severity: Severe, Risk: Severe \u2014 BP 200/100 exceeds ACOG Stage 2 threshold, Symptom: Severe \u2014 5 symptoms detected [PREECLAMPSIA FLAG]"
+            },
+            {
+              "from": "CANDIDATE SUMMARY",
+              "text": "She was started on nifedipine to lower her blood sugar."
+            },
+            {
+              "from": "SOURCE NOTES",
+              "text": "The source notes contain no information about medications."
+            }
+          ],
+          "issues": [
+            {
+              "category": "Omission",
+              "description": "Omitted the final severe blood pressure of 200/100."
+            },
+            {
+              "category": "Omission",
+              "description": "Omitted the five symptoms of preeclampsia from the final assessment (edema, headache, nausea, shortness_of_breath, visual_disturbance)."
+            },
+            {
+              "category": "Omission",
+              "description": "Omitted the consistent \"Severe\" risk rating and the PREECLAMPSIA FLAG."
+            },
+            {
+              "category": "Accuracy",
+              "description": "Incorrectly stated the patient's condition improved when it worsened."
+            },
+            {
+              "category": "Accuracy",
+              "description": "Incorrectly described the final BP as \"mildly elevated\" and symptoms as absent."
+            },
+            {
+              "category": "Accuracy",
+              "description": "Incorrectly stated the risk was downgraded to \"Moderate\"."
+            },
+            {
+              "category": "Hallucination",
+              "description": "Fabricated the administration of nifedipine and incorrectly stated its purpose was to lower blood sugar."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "dimension": "correctness",
+      "description": "The summary is medically sound and internally consistent on its own terms.",
+      "scale": "1-5",
+      "mean_score": 1.0,
+      "min_score": 1,
+      "max_score": 1,
+      "score_spread": 0,
+      "score_stdev": 0.0,
+      "agreement": "unanimous",
+      "issues": [
+        {
+          "member": "anthropic:claude-sonnet-4-6",
+          "issue": "Nifedipine described as lowering blood sugar \u2014 this is a clinically incorrect drug-indication pairing; nifedipine lowers blood pressure, not blood sugar"
+        },
+        {
+          "member": "anthropic:claude-sonnet-4-6",
+          "issue": "Summary claims clinical improvement when the most recent assessment shows the worst values of the day (BP 200/100, 5 symptoms, composite score 1.000)"
+        },
+        {
+          "member": "anthropic:claude-sonnet-4-6",
+          "issue": "Summary claims the system downgraded her to Moderate risk, but the most recent note shows Severe with no downgrade"
+        },
+        {
+          "member": "anthropic:claude-sonnet-4-6",
+          "issue": "Summary claims 'no symptoms' at most recent assessment, but the most recent note documents 5 symptoms"
+        },
+        {
+          "member": "gemini:gemini-2.5-pro",
+          "issue": "Nifedipine is incorrectly indicated for lowering blood sugar; it is a medication for high blood pressure."
+        }
+      ],
+      "verdicts": [
+        {
+          "member": "anthropic:claude-sonnet-4-6",
+          "provider": "anthropic",
+          "model": "claude-sonnet-4-6",
+          "score": 1,
+          "rationale": "The summary contains multiple serious medical errors. First, it misrepresents the clinical trajectory: the most recent (18:05) assessment shows the highest severity with BP 200/100, 5 symptoms, and a composite score of 1.000 \u2014 the opposite of 'improved' or 'reassuring.' Second, nifedipine is a calcium channel blocker used to lower blood pressure (and sometimes as a tocolytic), not to lower blood sugar \u2014 pairing nifedipine with 'lower blood sugar' is a clinically nonsensical drug-indication mismatch. Third, the claim that the system downgraded her to Moderate risk is false \u2014 the most recent note shows Severe with no downgrade notation. The summary is internally incoherent and medically incorrect on multiple fundamental points.",
+          "supporting_evidence": [
+            "Most recent note (18:05): 'Risk: Severe \u2014 BP 200/100 exceeds ACOG Stage 2 threshold' and 'Symptom: Severe \u2014 5 symptoms detected [PREECLAMPSIA FLAG]'",
+            "Summary states: 'assessments improved over the course of the day' \u2014 contradicted by worsening BP and symptom count",
+            "Summary states: 'mildly elevated blood pressure with no symptoms' \u2014 most recent BP is 200/100 with 5 symptoms",
+            "Summary states: 'nifedipine to lower her blood sugar' \u2014 nifedipine is an antihypertensive/calcium channel blocker, not a glucose-lowering agent"
+          ],
+          "issues": [
+            "Nifedipine described as lowering blood sugar \u2014 this is a clinically incorrect drug-indication pairing; nifedipine lowers blood pressure, not blood sugar",
+            "Summary claims clinical improvement when the most recent assessment shows the worst values of the day (BP 200/100, 5 symptoms, composite score 1.000)",
+            "Summary claims the system downgraded her to Moderate risk, but the most recent note shows Severe with no downgrade",
+            "Summary claims 'no symptoms' at most recent assessment, but the most recent note documents 5 symptoms"
+          ]
+        },
+        {
+          "member": "gemini:gemini-2.5-pro",
+          "provider": "gemini",
+          "model": "gemini-2.5-pro",
+          "score": 1,
+          "rationale": "The summary contains a critical medical error by stating that nifedipine is used to lower blood sugar. Nifedipine is a calcium channel blocker used for hypertension, not for managing blood glucose. This is a fundamental pharmacological mistake.",
+          "supporting_evidence": [
+            "She was started on nifedipine to lower her blood sugar."
+          ],
+          "issues": [
+            "Nifedipine is incorrectly indicated for lowering blood sugar; it is a medication for high blood pressure."
+          ]
+        }
+      ]
+    }
+  ]
+}
