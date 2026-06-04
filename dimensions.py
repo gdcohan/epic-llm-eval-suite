@@ -35,15 +35,19 @@ OUTPUT_CONTRACT = (
     '  "synopsis": ONE sentence summarizing your judgment,\n'
     '  "findings": an array of citation objects (may be empty), each with:\n'
     '     - "type": "issue" for a problem, or "support" for positive evidence;\n'
-    '     - "summary_quote": the exact substring of the CANDIDATE SUMMARY this\n'
-    "       finding concerns, copied verbatim, or null if not applicable;\n"
-    '     - "note_quote": the exact substring of a SOURCE NOTE that contradicts\n'
-    "       or supports it, copied verbatim, or null if not applicable;\n"
+    '     - "summary_quote": an EXACT, character-for-character substring copied\n'
+    "       from the CANDIDATE SUMMARY, or null if not applicable;\n"
+    '     - "note_quote": an EXACT, character-for-character substring copied from\n'
+    "       a SOURCE NOTE, or null if not applicable;\n"
     '     - "note_id": the id= of the source note that note_quote came from\n'
     "       (use the id shown in that note's header), or null;\n"
     '     - "explanation": a brief statement of what this finding shows.\n'
-    "Copy quotes VERBATIM (character for character) so each span can be located "
-    "and linked back to the source text."
+    "CRITICAL: quotes are matched programmatically (exact substring) to link each\n"
+    "finding back to the source and highlight it in the UI. Copy them verbatim --\n"
+    "do NOT paraphrase, summarize, truncate with ellipses, fix typos, or change\n"
+    "wording, casing, punctuation, or whitespace. Prefer a short exact span over a\n"
+    "long one. If you cannot reproduce a span exactly, set that quote to null\n"
+    "rather than approximating, and rely on the explanation instead."
 )
 
 
