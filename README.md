@@ -158,7 +158,16 @@ Epic note IDs, **pasted note text**, or a mix — the pasted path is a first-cla
 escape hatch so the whole pipeline is demonstrable without FHIR. (A disabled
 "fetch a summary by Epic ID" field marks the future provenance pathway.) In stub
 mode the app is fully offline; `JURY_MODE=live` (+ keys) fetches notes by ID and
-renders real judgments. Jury Config / Live Judge are next (roadmap 3b / 3c).
+renders real judgments.
+
+**Jury Config** (3b) — edit everything that defines the jury, persisted globally
+to `data/jury_config.json` and applied on the next run: **dimensions** (add /
+toggle / remove + prompts), **personas** (add / remove + temperature/text),
+**models** (`provider:model`), and the shared **recency guidance** and **output
+contract** (editable, with reset). The live panel is the **cross-product of
+models × personas**; a preview shows the resulting juror count and calls-per-case.
+**Show-the-prompt** previews the exact assembled juror prompt. Live Judge is next
+(3c).
 
 ## Files
 

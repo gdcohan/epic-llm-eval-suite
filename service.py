@@ -19,8 +19,9 @@ load_dotenv()  # so JURY_MODE / JURY_PANEL / API keys in .env reach the UI too
 
 import cases
 import persistence
+import config
 from note_extractor import extract_note, make_manual_note
-from jury import run_jury, default_panel
+from jury import run_jury
 
 CASE_SOURCES = [cases.CASES_DIR, os.path.join("examples", "cases")]
 
@@ -40,7 +41,7 @@ def make_fetch_client():
 def panel_info():
     """Current jury mode + panel, for the UI header."""
     mode = os.getenv("JURY_MODE", "stub").lower()
-    members = [f"{m.provider}:{m.model}" for m in default_panel()]
+    members = [f"{m.provider}:{m.model}" for m in config.active_panel()]
     return {"mode": mode, "members": members}
 
 
@@ -254,6 +255,9 @@ def judge_case(case, fetch_missing=None):
             "Stub mode uses only cached/pasted notes; set JURY_MODE=live (+ Epic creds) "
             "to fetch notes by ID."
         )
-    verdict = run_jury(notes, cases.summary_text(case), case_id=case["case_id"])
+    verdict = run_jury(notes, cases.summary_text(case), case_id=case["case_id"],
+                       dimensions=config.active_dimensions(), panel=config.active_panel(),
+                       source_guidance=config.active_source_guidance(),
+                       output_contract=config.active_output_contract())
     persistence.save_verdict(verdict)
     return verdict, missing

@@ -29,6 +29,7 @@ from note_extractor import extract_note
 from jury import run_jury, print_verdict
 import persistence
 import cases
+import config
 
 # Epic sandbox test patients (salvaged from the original SDOH scaffolding) --
 # useful for `discover` when you don't have note IDs yet.
@@ -126,7 +127,10 @@ def cmd_judge_case(args):
     print(f"⚖️  Judging case '{case['case_id']}' against "
           f"{len(case['source_note_ids'])} source note(s)")
     notes = _gather_notes(case["source_note_ids"], _make_client(args))
-    verdict = run_jury(notes, cases.summary_text(case), case_id=case["case_id"])
+    verdict = run_jury(notes, cases.summary_text(case), case_id=case["case_id"],
+                       dimensions=config.active_dimensions(), panel=config.active_panel(),
+                       source_guidance=config.active_source_guidance(),
+                       output_contract=config.active_output_contract())
     print_verdict(verdict)
     print(f"\nSaved verdict -> {persistence.save_verdict(verdict)}")
 
@@ -141,7 +145,9 @@ def cmd_judge(args):
 def cmd_run(args):
     summary = _read_summary(args)
     notes = fetch_notes(_collect_ids(args), EpicFHIRClient())
-    verdict = run_jury(notes, summary)
+    verdict = run_jury(notes, summary, dimensions=config.active_dimensions(), panel=config.active_panel(),
+                       source_guidance=config.active_source_guidance(),
+                       output_contract=config.active_output_contract())
     print_verdict(verdict)
     persistence.save_verdict(verdict)
 

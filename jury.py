@@ -99,17 +99,11 @@ def _aggregate_source(notes):
     return "\n\n".join(blocks)
 
 
-def _build_messages(dimension, source_text, candidate_summary, member):
+def _build_messages(dimension, source_text, candidate_summary, member, source_guidance, output_contract):
+    # .replace (not .format) so a user-edited contract with literal braces is safe.
+    contract = output_contract.replace("{scale}", str(dimension.scale))
     system = "\n\n".join(
-        filter(
-            None,
-            [
-                member.persona,
-                dimension.prompt,
-                SOURCE_GUIDANCE,
-                OUTPUT_CONTRACT.format(scale=dimension.scale),
-            ],
-        )
+        filter(None, [member.persona, dimension.prompt, source_guidance, contract])
     )
     user = (
         "=== SOURCE NOTES (ground truth, oldest first) ===\n"
@@ -120,8 +114,9 @@ def _build_messages(dimension, source_text, candidate_summary, member):
     return system, user
 
 
-def _judge(dimension, source_text, candidate_summary, member):
-    system, user = _build_messages(dimension, source_text, candidate_summary, member)
+def _judge(dimension, source_text, candidate_summary, member, source_guidance, output_contract):
+    system, user = _build_messages(dimension, source_text, candidate_summary, member,
+                                   source_guidance, output_contract)
     try:
         result = get_provider(member.provider).complete_json(
             system, user, member.model, member.temperature
@@ -171,7 +166,8 @@ def _collect_findings(verdicts):
     ]
 
 
-def run_jury(notes, candidate_summary, dimensions=None, panel=None, case_id=None):
+def run_jury(notes, candidate_summary, dimensions=None, panel=None, case_id=None,
+             source_guidance=None, output_contract=None):
     """Score a candidate summary against the TOTALITY of its source notes.
 
     `notes` may be a single note dict or a list of them. Returns a verdict dict.
@@ -183,11 +179,14 @@ def run_jury(notes, candidate_summary, dimensions=None, panel=None, case_id=None
 
     dimensions = dimensions or DEFAULT_DIMENSIONS
     panel = panel or default_panel()
+    source_guidance = SOURCE_GUIDANCE if source_guidance is None else source_guidance
+    output_contract = OUTPUT_CONTRACT if output_contract is None else output_contract
     source_text = _aggregate_source(notes)
 
     dimension_results = []
     for dim in dimensions:
-        verdicts = [_judge(dim, source_text, candidate_summary, m) for m in panel]
+        verdicts = [_judge(dim, source_text, candidate_summary, m, source_guidance, output_contract)
+                    for m in panel]
         stats = _stats([v.get("score") for v in verdicts])
         dimension_results.append(
             {

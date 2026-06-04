@@ -9,10 +9,12 @@ The service layer (service.py) holds all logic, so the UI stays swappable.
 
 import re
 import html
+import uuid
 import pandas as pd
 import streamlit as st
 
 import service
+import config
 
 st.set_page_config(page_title="Jury Explorer", layout="wide")
 
@@ -364,6 +366,163 @@ def render_explorer():
 
 
 # --------------------------------------------------------------- main
+def _seed(items):
+    out = []
+    for it in items:
+        it = dict(it)
+        it["_id"] = uuid.uuid4().hex[:8]
+        out.append(it)
+    return out
+
+
+def _render_dimensions():
+    st.subheader("Dimensions")
+    st.caption("Each dimension is one juror prompt. Toggle, edit, add, or remove — applies to the next run.")
+    if "dim_edit" not in st.session_state:
+        st.session_state.dim_edit = _seed(config.all_dimension_configs())
+    for dim in st.session_state.dim_edit:
+        _id = dim["_id"]
+        suffix = "" if dim.get("enabled", True) else "  ·  (disabled)"
+        with st.expander(f"{dim.get('name') or 'new dimension'}{suffix}", expanded=not dim.get("name")):
+            dim["enabled"] = st.checkbox("enabled", value=dim.get("enabled", True), key=f"en_{_id}")
+            dim["name"] = st.text_input("name", value=dim.get("name", ""), key=f"nm_{_id}")
+            dim["description"] = st.text_input("description", value=dim.get("description", ""), key=f"ds_{_id}")
+            dim["scale"] = st.text_input("scale", value=dim.get("scale", "1-5"), key=f"sc_{_id}")
+            dim["prompt"] = st.text_area("prompt", value=dim.get("prompt", ""), height=200, key=f"pr_{_id}")
+            if st.button("remove", key=f"rm_{_id}"):
+                st.session_state.dim_edit = [x for x in st.session_state.dim_edit if x["_id"] != _id]
+                st.rerun()
+    a, b, c = st.columns(3)
+    if a.button("➕ add dimension"):
+        st.session_state.dim_edit.append({"_id": uuid.uuid4().hex[:8], "name": "", "description": "",
+                                          "prompt": "", "scale": "1-5", "enabled": True})
+        st.rerun()
+    if b.button("💾 save dimensions"):
+        config.save_dimensions([{k: v for k, v in d.items() if k != "_id"} for d in st.session_state.dim_edit])
+        st.success(f"Saved — {len(config.active_dimensions())} active dimension(s).")
+    if c.button("↺ reset dimensions"):
+        config.reset_dimensions()
+        st.session_state.pop("dim_edit", None)
+        st.rerun()
+
+
+def _render_personas():
+    st.subheader("Personas")
+    st.caption("Reviewer styles. The live jury = models × personas (one juror per pairing).")
+    if "persona_edit" not in st.session_state:
+        st.session_state.persona_edit = _seed(config.all_personas())
+    for p in st.session_state.persona_edit:
+        _id = p["_id"]
+        with st.expander(f"{p.get('name') or 'new persona'}  ·  temp {p.get('temperature', 0.2)}",
+                         expanded=not p.get("name")):
+            p["name"] = st.text_input("name", value=p.get("name", ""), key=f"pn_{_id}")
+            p["temperature"] = st.number_input("temperature", value=float(p.get("temperature", 0.2)),
+                                               min_value=0.0, max_value=2.0, step=0.1, key=f"pt_{_id}")
+            p["text"] = st.text_area("persona text (prepended to the prompt)",
+                                     value=p.get("text", ""), height=80, key=f"px_{_id}")
+            if st.button("remove", key=f"pr_{_id}"):
+                st.session_state.persona_edit = [x for x in st.session_state.persona_edit if x["_id"] != _id]
+                st.rerun()
+    a, b, c = st.columns(3)
+    if a.button("➕ add persona"):
+        st.session_state.persona_edit.append({"_id": uuid.uuid4().hex[:8], "name": "", "temperature": 0.2, "text": ""})
+        st.rerun()
+    if b.button("💾 save personas"):
+        config.save_personas([{k: v for k, v in p.items() if k != "_id"} for p in st.session_state.persona_edit])
+        st.success("Saved personas.")
+    if c.button("↺ reset personas"):
+        config.reset_personas()
+        st.session_state.pop("persona_edit", None)
+        st.rerun()
+
+
+def _render_models():
+    st.subheader("Models")
+    st.caption("One `provider:model` per line (providers: anthropic, openai, gemini). Live mode only.")
+    txt = st.text_area("models", value="\n".join(f"{m['provider']}:{m['model']}" for m in config.all_models()),
+                       height=90, label_visibility="collapsed")
+    a, b = st.columns(2)
+    if a.button("💾 save models"):
+        models = []
+        for line in txt.splitlines():
+            parts = [x.strip() for x in line.split(":")]
+            if parts and parts[0]:
+                models.append({"provider": parts[0], "model": parts[1] if len(parts) > 1 else ""})
+        config.save_models(models)
+        st.success("Saved models.")
+    if b.button("↺ reset models"):
+        config.reset_models()
+        st.rerun()
+
+
+def _render_shared_text(title, caption, getter, saver, resetter, height):
+    st.subheader(title)
+    if caption:
+        st.caption(caption)
+    txt = st.text_area(title, value=getter(), height=height, label_visibility="collapsed")
+    a, b = st.columns(2)
+    if a.button(f"💾 save", key=f"save_{title}"):
+        saver(txt)
+        st.success("Saved.")
+    if b.button("↺ reset", key=f"reset_{title}"):
+        resetter()
+        st.rerun()
+
+
+def _render_panel_preview():
+    st.subheader("Panel preview")
+    panel = config.active_panel()
+    n_dims = len(config.active_dimensions())
+    info = service.panel_info()
+    dot = "🟢 live" if info["mode"] == "live" else "🟡 stub"
+    st.caption(f"{dot} · {len(panel)} juror(s): {', '.join(m.name for m in panel)}")
+    st.caption(f"Calls per case ≈ jurors × dimensions = {len(panel)} × {n_dims} = **{len(panel) * n_dims}**")
+
+
+def _render_show_prompt():
+    st.subheader("Show the prompt")
+    st.caption("Reflects the SAVED config (save your edits above to preview them).")
+    dims = config.active_dimensions()
+    personas = config.all_personas()
+    if not dims:
+        st.caption("Add a dimension with a prompt to preview it.")
+        return
+    dpick = st.selectbox("dimension", [d.name for d in dims])
+    ppick = st.selectbox("persona", ["(none)"] + [p.get("name") or "unnamed" for p in personas])
+    d = next(x for x in dims if x.name == dpick)
+    persona_text = ""
+    if ppick != "(none)":
+        pp = next((p for p in personas if (p.get("name") or "unnamed") == ppick), None)
+        persona_text = pp.get("text", "") if pp else ""
+    contract = config.active_output_contract().replace("{scale}", str(d.scale))
+    system = "\n\n".join(filter(None, [persona_text, d.prompt, config.active_source_guidance(), contract]))
+    st.caption("Exactly what this juror gets as the system prompt (notes + summary are the user message):")
+    st.code(system)
+
+
+def render_jury_config():
+    _render_dimensions()
+    st.divider()
+    _render_personas()
+    st.divider()
+    _render_models()
+    st.divider()
+    _render_shared_text(
+        "Recency guidance (shared)",
+        "Prepended to every dimension. Governs how jurors reconcile notes that disagree across time.",
+        config.active_source_guidance, config.save_source_guidance, config.reset_source_guidance, 140)
+    st.divider()
+    _render_shared_text(
+        "Output contract (shared)",
+        "⚠️ Load-bearing: the app parses `score` / `synopsis` / `findings` and uses the verbatim quotes "
+        "for source-links. Keep those keys or scores/links break. Use `{scale}` as the score-range placeholder.",
+        config.active_output_contract, config.save_output_contract, config.reset_output_contract, 220)
+    st.divider()
+    _render_panel_preview()
+    st.divider()
+    _render_show_prompt()
+
+
 def main():
     render_header()
     NAV = ["Overview", "Summary Explorer", "Jury Config", "Live Judge"]
@@ -380,7 +539,7 @@ def main():
     elif choice == "Summary Explorer":
         render_explorer()
     elif choice == "Jury Config":
-        st.info("**Jury Config** — edit dimensions / prompts / panel. Roadmap 3b.")
+        render_jury_config()
     else:
         st.info("**Live Judge** — ad-hoc summary + notes, break-it-live. Roadmap 3c.")
 

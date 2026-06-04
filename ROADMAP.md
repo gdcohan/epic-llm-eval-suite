@@ -19,6 +19,8 @@ agreement across jurors) + aggregated flagged issues.
 *Why here:* it's the data the UI's verdict view renders.
 
 ### 3. UI V1 (Streamlit)  · *offline-buildable, demoable*
+
+*(3a Explorer, Overview dashboard, adjudication, and 3b Jury Config built; 3c Live Judge next.)*
 - **3a. Summary Explorer** — list ingested summaries (cases) → pick one → jury
   eval + disagreement + list of reference notes + note viewer.
 - **3b. Jury config** — add / toggle / remove dimensions, edit prompts,
