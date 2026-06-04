@@ -132,14 +132,21 @@ relevant API key for substantive judgments.
 streamlit run app.py            # JURY_MODE / JURY_PANEL from the environment
 ```
 
-**Summary Explorer** (V1, section 3a): browse ingested summaries (cases), see
-the jury verdict with per-dimension scores + **disagreement** and each juror's
-rationale, and view the reference notes (cleaned text + raw FHIR). **➕ New
-summary** creates a case from a summary plus reference notes provided as Epic
-note IDs, **pasted note text**, or a mix — the pasted-text path is a first-class
-escape hatch so the whole pipeline is demonstrable without FHIR. In stub mode the
-app is fully offline; `JURY_MODE=live` (+ keys) fetches notes by ID and renders
-real judgments. (Jury Config / Live Judge sections are next: roadmap 3b / 3c.)
+Top tabs select the section; the **Summary Explorer** (V1, 3a) has the ingested
+summaries in the left sidebar and a two-column body:
+- **col 1 — summary + judge synopsis**: the summary (with flagged spans
+  highlighted), then per-dimension score, **disagreement** (agreement badge +
+  each juror's score and one-line synopsis), and **structured, source-linked
+  findings** — "summary said *X*, note *N* says *Y*" with a **↪ source** button
+  that opens the cited note and highlights the span.
+- **col 2 — reference notes**: each expandable to cleaned text (+ raw FHIR).
+
+**➕ New summary** creates a case from a summary plus reference notes given as
+Epic note IDs, **pasted note text**, or a mix — the pasted path is a first-class
+escape hatch so the whole pipeline is demonstrable without FHIR. (A disabled
+"fetch a summary by Epic ID" field marks the future provenance pathway.) In stub
+mode the app is fully offline; `JURY_MODE=live` (+ keys) fetches notes by ID and
+renders real judgments. Jury Config / Live Judge tabs are next (roadmap 3b / 3c).
 
 ## Files
 

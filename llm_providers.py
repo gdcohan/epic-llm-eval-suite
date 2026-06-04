@@ -95,9 +95,8 @@ class StubProvider(LLMProvider):
         score = max(1, min(5, round(2 + temperature * 4)))
         return {
             "score": score,
-            "rationale": "[stub verdict] Offline placeholder; set JURY_MODE=live with an API key for substantive judgments.",
-            "supporting_evidence": [],
-            "issues": [],
+            "synopsis": "[stub verdict] Offline placeholder; set JURY_MODE=live with an API key for real judgments.",
+            "findings": [],
         }
 
 

@@ -32,10 +32,18 @@ SOURCE_GUIDANCE = (
 OUTPUT_CONTRACT = (
     "Return a JSON object with exactly these keys:\n"
     '  "score": integer on the {scale} scale (higher is better),\n'
-    '  "rationale": a concise justification for the score,\n'
-    '  "supporting_evidence": array of short quotes/spans your judgment rests on'
-    " (from the notes and/or the summary, whichever is relevant to this dimension),\n"
-    '  "issues": array of specific problems you found (empty if none).'
+    '  "synopsis": ONE sentence summarizing your judgment,\n'
+    '  "findings": an array of citation objects (may be empty), each with:\n'
+    '     - "type": "issue" for a problem, or "support" for positive evidence;\n'
+    '     - "summary_quote": the exact substring of the CANDIDATE SUMMARY this\n'
+    "       finding concerns, copied verbatim, or null if not applicable;\n"
+    '     - "note_quote": the exact substring of a SOURCE NOTE that contradicts\n'
+    "       or supports it, copied verbatim, or null if not applicable;\n"
+    '     - "note_id": the id= of the source note that note_quote came from\n'
+    "       (use the id shown in that note's header), or null;\n"
+    '     - "explanation": a brief statement of what this finding shows.\n'
+    "Copy quotes VERBATIM (character for character) so each span can be located "
+    "and linked back to the source text."
 )
 
 

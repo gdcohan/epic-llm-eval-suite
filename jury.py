@@ -131,9 +131,8 @@ def _judge(dimension, source_text, candidate_summary, member):
             "provider": member.provider,
             "model": member.model,
             "score": result.get("score"),
-            "rationale": result.get("rationale"),
-            "supporting_evidence": result.get("supporting_evidence", []),
-            "issues": result.get("issues", []),
+            "synopsis": result.get("synopsis") or result.get("rationale"),
+            "findings": result.get("findings", []),
         }
     except Exception as exc:
         return {"member": member.name, "provider": member.provider, "error": str(exc), "score": None}
@@ -163,12 +162,12 @@ def _stats(scores):
     }
 
 
-def _collect_issues(verdicts):
-    """Flatten jurors' issues, tagged with who raised each."""
+def _collect_findings(verdicts):
+    """Flatten jurors' findings, tagged with who raised each."""
     return [
-        {"member": v.get("member"), "issue": issue}
+        {**finding, "member": v.get("member")}
         for v in verdicts
-        for issue in (v.get("issues") or [])
+        for finding in (v.get("findings") or [])
     ]
 
 
@@ -201,7 +200,7 @@ def run_jury(notes, candidate_summary, dimensions=None, panel=None, case_id=None
                 "score_spread": stats["spread"],
                 "score_stdev": stats["stdev"],
                 "agreement": stats["agreement"],
-                "issues": _collect_issues(verdicts),
+                "findings": _collect_findings(verdicts),
                 "verdicts": verdicts,
             }
         )
@@ -229,7 +228,7 @@ def print_verdict(verdict):
     print(f"\n=== Jury verdict: {label} ({verdict.get('num_notes')} note(s)) ===")
     print(f"Panel: {', '.join(verdict['panel'])}")
     for d in verdict["dimensions"]:
-        n_issues = len(d.get("issues", []))
+        n_issues = sum(1 for f in d.get("findings", []) if f.get("type") == "issue")
         print(f"  • {d['dimension']:<18} mean {d['mean_score']} / {d['scale']} "
               f"[{d.get('agreement')}, spread {d.get('score_spread')}] · {n_issues} issue(s)")
     print(f"  OVERALL: {verdict['overall_score']}")

@@ -36,8 +36,9 @@ calibrator screen.
 
 ## Future (punted)
 
-- **Citations (V2)** — structured juror findings linking a summary span ↔ the
-  contradicting/supporting note span, highlighted in the Explorer.
+- ~~**Citations (V2)**~~ — *pulled forward into 3a*: jurors emit structured
+  findings (score + synopsis + issues with verbatim summary/note quotes +
+  note_id), source-linked and highlighted in the Explorer.
 - **Jury calibrator screen** — human-in-the-loop on top of the validation
   harness: review known examples, see jury scores, adjudicate / overrule / score.
 - **Synthetic summary generation** — LLM summarizer + deliberate error-injection
