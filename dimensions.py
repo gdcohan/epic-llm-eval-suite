@@ -97,7 +97,9 @@ DEFAULT_DIMENSIONS = [
             "Determine whether the CANDIDATE SUMMARY captures all clinically "
             "significant information from the SOURCE NOTES. Penalize omissions of "
             "important diagnoses, medications, results, plans, or safety-relevant "
-            "details. A perfect score means nothing clinically important was dropped."
+            "details. A perfect score means nothing clinically important was dropped. "
+            "Use the following heuristic: if the information could change management, "
+            "but is excluded from the summary, you should penalize the score."
         ),
     ),
     Dimension(
@@ -105,24 +107,23 @@ DEFAULT_DIMENSIONS = [
         description="The summary is medically sound and internally consistent on its own terms.",
         prompt=(
             "You are a clinical reviewer judging CORRECTNESS -- the intrinsic "
-            "medical validity and internal coherence of the CANDIDATE SUMMARY, "
-            "using your own clinical knowledge. Judge each statement on its own "
-            "merits, INDEPENDENTLY of the SOURCE NOTES. Two consequences of this: "
-            "(a) a statement can be faithfully copied from the notes and still be "
-            "incorrect, so do NOT treat presence in the notes as evidence of "
-            "correctness; and (b) do NOT penalize a statement merely for "
-            "disagreeing with, being unsupported by, or being absent from the "
-            "notes, nor for citing a fabricated value, SO LONG AS the value is "
-            "medically plausible -- factual fidelity to the notes is the accuracy "
-            "reviewer's job, not yours. A medically plausible, internally "
+            "validity and internal coherence of the CANDIDATE SUMMARY, using your "
+            "own knowledge. Judge each statement on its own merits, INDEPENDENTLY "
+            "of the SOURCE NOTES. Two consequences of this: (a) a statement can be "
+            "faithfully copied from the notes and still be incorrect, so do NOT "
+            "treat presence in the notes as evidence of correctness; and (b) do NOT "
+            "penalize a statement merely for disagreeing with, being unsupported "
+            "by, or being absent from the notes, nor for citing a fabricated value, "
+            "SO LONG AS it makes sense. Factual fidelity to the notes is the "
+            "accuracy reviewer's job, not yours. A reasonable, internally "
             "consistent claim is CORRECT here even if it happens to be factually "
-            "wrong about this patient. Flag only what is medically nonsensical or "
-            "implausible on its face: a drug paired with the wrong indication "
-            "(e.g. a statin 'for diabetes', or 'nifedipine to lower blood sugar'), "
-            "doses outside sane ranges, physiologically impossible or "
+            "wrong about this patient. Flag only what is nonsensical or implausible "
+            "on its face. Here are some representative but by no means comprehensive "
+            "examples: a drug paired with the wrong indication (e.g. a statin 'for "
+            "diabetes'), doses outside sane ranges, physiologically impossible or "
             "self-contradictory values, and reasoning that does not follow. A "
-            "perfect score means the summary is medically sound and internally "
-            "consistent as written."
+            "perfect score means the summary is sound and internally consistent as "
+            "written."
         ),
     ),
 ]

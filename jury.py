@@ -30,7 +30,6 @@ class JuryMember:
 DEFAULT_PERSONAS = [
     ("strict", 0.0, "Be a strict, skeptical reviewer."),
     ("balanced", 0.3, "Be a balanced, fair reviewer."),
-    ("lenient", 0.6, "Be a charitable reviewer who rewards intent."),
 ]
 
 _DEFAULT_MODELS = {
