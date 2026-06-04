@@ -10,6 +10,7 @@ import re
 import glob
 import json
 import uuid
+from collections import defaultdict
 
 from dotenv import load_dotenv
 
@@ -159,6 +160,52 @@ def case_notes(case):
 
 def load_verdict(case_id):
     return persistence.load_verdict(case_id)
+
+
+def overview_stats():
+    """Aggregate stats across all cases for the Overview dashboard."""
+    cases = list_cases()
+    rows, dims_order = [], []
+    dim_scores, dim_issues = defaultdict(list), defaultdict(int)
+    n_judged = 0
+
+    for c in cases:
+        verdict = persistence.load_verdict(c["case_id"])
+        if not verdict:
+            rows.append({"case": c["case_id"], "overall": None, "issues": None,
+                         "agreement": "pending", "judged": False})
+            continue
+        n_judged += 1
+        splits = verdict.get("split_dimensions") or []
+        row = {"case": c["case_id"], "overall": verdict.get("overall_score"),
+               "issues": 0, "agreement": "split" if splits else "agreed", "judged": True}
+        for d in verdict.get("dimensions", []):
+            name = d["dimension"]
+            if name not in dims_order:
+                dims_order.append(name)
+            row[name] = d.get("mean_score")
+            if isinstance(d.get("mean_score"), (int, float)):
+                dim_scores[name].append(d["mean_score"])
+            n_iss = sum(1 for f in d.get("findings", []) if f.get("type") == "issue")
+            dim_issues[name] += n_iss
+            row["issues"] += n_iss
+        rows.append(row)
+
+    overalls = [r["overall"] for r in rows if isinstance(r.get("overall"), (int, float))]
+    kpis = {
+        "cases": len(cases),
+        "judged": n_judged,
+        "avg_overall": round(sum(overalls) / len(overalls), 2) if overalls else None,
+        "with_issues": sum(1 for r in rows if r.get("issues")),
+        "splits": sum(1 for r in rows if r.get("agreement") == "split"),
+    }
+    return {
+        "rows": rows,
+        "dims": dims_order,
+        "kpis": kpis,
+        "avg_by_dim": {d: round(sum(s) / len(s), 2) for d, s in dim_scores.items() if s},
+        "issues_by_dim": dict(dim_issues),
+    }
 
 
 def judge_case(case, fetch_missing=None):

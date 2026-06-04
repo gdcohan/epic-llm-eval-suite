@@ -9,6 +9,7 @@ The service layer (service.py) holds all logic, so the UI stays swappable.
 
 import re
 import html
+import pandas as pd
 import streamlit as st
 
 import service
@@ -60,6 +61,63 @@ def _highlight(text, quotes, mark_color="#fff3a3"):
 
 def _issue_findings(dimension):
     return [f for f in dimension.get("findings", []) if f.get("type") == "issue"]
+
+
+# ------------------------------------------------------------- overview
+def render_overview():
+    s = service.overview_stats()
+    k = s["kpis"]
+    cols = st.columns(5)
+    cols[0].metric("Cases", k["cases"])
+    cols[1].metric("Judged", k["judged"])
+    cols[2].metric("Avg overall", "—" if k["avg_overall"] is None else k["avg_overall"])
+    cols[3].metric("With issues", k["with_issues"])
+    cols[4].metric("Juror splits", k["splits"])
+
+    if k["judged"] == 0:
+        st.info("No judged cases yet — judge some in the Summary Explorer.")
+        return
+
+    c1, c2 = st.columns(2)
+    with c1:
+        st.caption("Avg score by dimension")
+        if s["avg_by_dim"]:
+            st.bar_chart(pd.DataFrame({"avg score": s["avg_by_dim"]}))
+    with c2:
+        st.caption("Issues by dimension")
+        if s["issues_by_dim"]:
+            st.bar_chart(pd.DataFrame({"issues": s["issues_by_dim"]}))
+
+    st.caption("Case scorecard (lower = redder; sort by any column)")
+    dims = s["dims"]
+    col_order = ["case", "overall"] + dims + ["issues", "agreement"]
+    df = pd.DataFrame(s["rows"])
+    for col in col_order:
+        if col not in df.columns:
+            df[col] = None
+    df = df[col_order]
+    score_cols = ["overall"] + dims
+
+    def _style(val):
+        if not isinstance(val, (int, float)) or pd.isna(val):
+            return ""
+        return f"background-color: {_score_color(val)}; color: white"
+
+    styler = df.style
+    styler = styler.map(_style, subset=score_cols) if hasattr(styler, "map") \
+        else styler.applymap(_style, subset=score_cols)
+    styler = styler.format(precision=2)
+
+    event = st.dataframe(styler, hide_index=True, width="stretch",
+                         on_select="rerun", selection_mode="single-row", key="scorecard")
+    try:
+        sel_rows = event.selection["rows"]
+    except Exception:
+        sel_rows = []
+    if sel_rows:
+        cid = df.iloc[sel_rows[0]]["case"]
+        st.session_state.selected_case = cid
+        st.info(f"Selected **{cid}** — open the **Summary Explorer** tab to view it.")
 
 
 # --------------------------------------------------------------- header
@@ -258,7 +316,11 @@ def render_explorer():
 # --------------------------------------------------------------- main
 def main():
     render_header()
-    tab_explorer, tab_config, tab_live = st.tabs(["Summary Explorer", "Jury Config", "Live Judge"])
+    tab_overview, tab_explorer, tab_config, tab_live = st.tabs(
+        ["Overview", "Summary Explorer", "Jury Config", "Live Judge"]
+    )
+    with tab_overview:
+        render_overview()
     with tab_explorer:
         render_explorer()
     with tab_config:
