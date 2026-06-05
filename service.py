@@ -261,3 +261,29 @@ def judge_case(case, fetch_missing=None):
                        output_contract=config.active_output_contract())
     persistence.save_verdict(verdict)
     return verdict, missing
+
+
+def judge_adhoc(summary_text, note_ids=None, pasted_notes=None):
+    """Ephemeral judge for the Live Judge scratchpad: build notes from pasted text
+    (in-memory, not persisted) and/or fetched IDs, then run the jury. Returns
+    (verdict, notes, missing) without persisting anything."""
+    if not (summary_text or "").strip():
+        raise ValueError("A summary is required.")
+    notes = []
+    for i, p in enumerate(pasted_notes or []):
+        text = p.get("text") if isinstance(p, dict) else p
+        if text and str(text).strip():
+            notes.append(make_manual_note(str(text), note_id=f"adhoc-{i + 1}"))
+    missing = []
+    ids = [n.strip() for n in (note_ids or []) if n and n.strip()]
+    if ids:
+        client = make_fetch_client() if os.getenv("JURY_MODE", "stub").lower() == "live" else None
+        fetched, missing = gather_notes(ids, client=client)
+        notes += fetched
+    if not notes:
+        raise RuntimeError("Provide at least one reference note (paste text, or a fetchable ID in live mode).")
+    verdict = run_jury(notes, summary_text,
+                       dimensions=config.active_dimensions(), panel=config.active_panel(),
+                       source_guidance=config.active_source_guidance(),
+                       output_contract=config.active_output_contract())
+    return verdict, notes, missing

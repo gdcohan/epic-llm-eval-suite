@@ -174,8 +174,12 @@ toggle / remove + prompts), **personas** (add / remove + temperature/text),
 **models** (`provider:model`), and the shared **recency guidance** and **output
 contract** (editable, with reset). The live panel is the **cross-product of
 models × personas**; a preview shows the resulting juror count and calls-per-case.
-**Show-the-prompt** previews the exact assembled juror prompt. Live Judge is next
-(3c).
+**Show-the-prompt** previews the exact assembled juror prompt.
+
+**Live Judge** (3c) — a scratchpad: paste or fetch notes, type a summary, and
+**Judge** it live; edit the summary and re-judge to watch the scores move
+(break-it-live). Nothing persists unless you **Save as case** (which drops it
+into the Explorer).
 
 ## Files
 

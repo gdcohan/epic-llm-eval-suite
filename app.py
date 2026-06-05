@@ -524,6 +524,119 @@ def render_jury_config():
     _render_show_prompt()
 
 
+def _lj_focus(note_id, quote):
+    st.session_state.lj_focus_id = note_id
+    st.session_state.lj_focus_quote = quote
+
+
+def _render_verdict_block(verdict, src_key, focus_cb):
+    """Compact verdict: per-dimension scores + disagreement + source-linked issues.
+    `focus_cb(note_id, quote)` is wired to each issue's source button."""
+    overall = verdict.get("overall_score")
+    st.markdown("**Verdict** &nbsp; overall " + _badge(f"{overall} / 5", _score_color(overall)),
+                unsafe_allow_html=True)
+    if verdict.get("split_dimensions"):
+        st.caption(f"⚠ jurors split on: {', '.join(verdict['split_dimensions'])}")
+    for d in verdict["dimensions"]:
+        score_badge = _badge(f"{d.get('mean_score')} / {d.get('scale')}", _score_color(d.get("mean_score")))
+        agree_badge = _AGREEMENT_BADGE.get(d.get("agreement"), "")
+        st.markdown(f"**{d['dimension']}** &nbsp; {score_badge} &nbsp; {agree_badge} "
+                    f"<small>(spread {d.get('score_spread')})</small>", unsafe_allow_html=True)
+        for v in d.get("verdicts", []):
+            if v.get("error"):
+                st.markdown(f"- <small>**{v.get('member')}**: ⚠️ {v['error']}</small>", unsafe_allow_html=True)
+            else:
+                syn = v.get("synopsis") or ""
+                st.markdown(f"- <small>**{v.get('member')}** ({v.get('score')}): {syn}</small>",
+                            unsafe_allow_html=True)
+        for i, f in enumerate(_issue_findings(d)):
+            cols = st.columns([8, 2])
+            with cols[0]:
+                line = f"<small>⚠ {html.escape(f.get('explanation', ''))}"
+                if f.get("summary_quote"):
+                    line += f"<br>· summary: “<i>{html.escape(f['summary_quote'])}</i>”"
+                if f.get("note_quote"):
+                    line += (f"<br>· note <code>{html.escape(str(f.get('note_id')))}</code>: "
+                             f"“<i>{html.escape(f['note_quote'])}</i>”")
+                line += "</small>"
+                st.markdown(line, unsafe_allow_html=True)
+            with cols[1]:
+                if f.get("note_id") and f.get("note_quote"):
+                    st.button("↪ source", key=f"{src_key}_{d['dimension']}_{i}",
+                              on_click=focus_cb, args=(f["note_id"], f["note_quote"]))
+
+
+def render_live_judge():
+    st.caption("Scratchpad — paste or fetch notes, type a summary, and judge it live. "
+               "Edit the summary and re-judge to watch the scores move. Nothing is saved "
+               "unless you Save as case.")
+    left, right = st.columns(2)
+
+    # Right column first so the notes inputs commit before Judge reads them, and so
+    # a source-click (left) can focus/highlight a note here on the same rerun.
+    with right:
+        with st.container(height=760):
+            st.markdown("#### Reference notes")
+            st.text_area("Paste note text (separate multiple notes with a line of ---)",
+                         height=180, key="lj_pasted")
+            st.text_area("…or fetch by Epic note ID (space / comma / newline separated)",
+                         height=70, key="lj_ids")
+            st.caption("Pasted text works offline; fetched IDs need JURY_MODE=live + Epic creds.")
+            notes = st.session_state.get("live_notes") or []
+            if notes:
+                st.markdown("**Resolved notes**")
+            focus_id = st.session_state.get("lj_focus_id")
+            focus_quote = st.session_state.get("lj_focus_quote")
+            for n in notes:
+                nid = n["document_reference_id"]
+                focused = nid == focus_id
+                with st.expander(f"{nid} · {n['metadata'].get('type') or '—'}", expanded=focused):
+                    st.markdown(_highlight(n.get("combined_text") or "(empty)",
+                                           [focus_quote] if focused else []), unsafe_allow_html=True)
+
+    with left:
+        with st.container(height=760):
+            st.markdown("#### Summary")
+            summary = st.text_area("Candidate summary", height=200, key="lj_summary",
+                                   placeholder="Paste or type the summary to judge…")
+            b1, b2 = st.columns([1, 1])
+            if b1.button("⚖️ Judge", key="lj_judge"):
+                try:
+                    verdict, judged_notes, missing = service.judge_adhoc(
+                        summary,
+                        _split_ids(st.session_state.get("lj_ids", "")),
+                        [{"text": t} for t in _split_pasted(st.session_state.get("lj_pasted", ""))],
+                    )
+                    st.session_state.live_verdict = verdict
+                    st.session_state.live_notes = judged_notes
+                    st.session_state.pop("lj_focus_id", None)
+                    if missing:
+                        st.warning(f"Could not fetch: {', '.join(missing)}")
+                    st.rerun()
+                except Exception as exc:
+                    st.error(str(exc))
+            with b2.popover("💾 Save as case"):
+                cid = st.text_input("case id", key="lj_save_id", placeholder="(auto if blank)")
+                if st.button("save", key="lj_save_btn"):
+                    try:
+                        case = service.create_case(
+                            summary_text=st.session_state.get("lj_summary", ""),
+                            case_id=cid,
+                            note_ids=_split_ids(st.session_state.get("lj_ids", "")),
+                            pasted_notes=[{"text": t} for t in _split_pasted(st.session_state.get("lj_pasted", ""))],
+                        )
+                        st.success(f"Saved case '{case['case_id']}' — see Summary Explorer.")
+                    except Exception as exc:
+                        st.error(str(exc))
+
+            verdict = st.session_state.get("live_verdict")
+            if verdict:
+                st.divider()
+                _render_verdict_block(verdict, "ljsrc", _lj_focus)
+            else:
+                st.info("Enter a summary and notes, then **Judge**.")
+
+
 def main():
     render_header()
     NAV = ["Overview", "Summary Explorer", "Jury Config", "Live Judge"]
@@ -542,7 +655,7 @@ def main():
     elif choice == "Jury Config":
         render_jury_config()
     else:
-        st.info("**Live Judge** — ad-hoc summary + notes, break-it-live. Roadmap 3c.")
+        render_live_judge()
 
 
 if __name__ == "__main__":
