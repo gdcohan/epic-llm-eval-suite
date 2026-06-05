@@ -199,6 +199,11 @@ def _focus_note(note_id, quote):
     st.session_state.focus_quote = quote
 
 
+def _toggle_finding_label(case_id, key, label, meta):
+    cur = (service.get_adjudication(case_id) or {}).get("finding_labels", {}).get(key, {}).get("label")
+    service.set_finding_label(case_id, key, None if cur == label else label, meta)
+
+
 def render_summary_and_verdict(case):
     summary = case.get("summary", {}) or {}
     verdict = service.load_verdict(case["case_id"])
@@ -237,6 +242,7 @@ def render_summary_and_verdict(case):
     adj = service.get_adjudication(case["case_id"]) or {}
     adj_dims = adj.get("dimensions", {})
     adj_rationales = adj.get("rationales", {})
+    finding_labels = adj.get("finding_labels", {})
     adjudicator = st.text_input("Adjudicator", value=adj.get("adjudicator", ""),
                                 key=f"adjudicator_{case['case_id']}",
                                 placeholder="your name (for the overrides below)")
@@ -264,11 +270,16 @@ def render_summary_and_verdict(case):
         # Structured findings with source links.
         issues = _issue_findings(d)
         if issues:
-            st.markdown("<small>**issues**</small>", unsafe_allow_html=True)
+            st.markdown("<small>**issues** — mark each ✓ valid / ✗ false alarm</small>",
+                        unsafe_allow_html=True)
         for i, f in enumerate(issues):
-            cols = st.columns([8, 2])
+            fkey = service.finding_key(d["dimension"], f.get("member"),
+                                       f.get("summary_quote"), f.get("note_quote"))
+            cur_label = (finding_labels.get(fkey) or {}).get("label")
+            tag = {"valid": " <b>✓</b>", "false_alarm": " <b>✗</b>"}.get(cur_label, "")
+            cols = st.columns([7, 3])
             with cols[0]:
-                line = f"<small>⚠ {html.escape(f.get('explanation',''))}"
+                line = f"<small>⚠ {html.escape(f.get('explanation',''))}{tag}"
                 if f.get("summary_quote"):
                     line += f"<br>· summary: “<i>{html.escape(f['summary_quote'])}</i>”"
                 if f.get("note_quote"):
@@ -277,9 +288,19 @@ def render_summary_and_verdict(case):
                 line += f" <span style='color:#888'>[{f.get('member')}]</span></small>"
                 st.markdown(line, unsafe_allow_html=True)
             with cols[1]:
+                meta = {"dimension": d["dimension"], "member": f.get("member"),
+                        "summary_quote": f.get("summary_quote"),
+                        "note_quote": f.get("note_quote"), "note_id": f.get("note_id")}
+                bc = st.columns(3)
                 if f.get("note_id") and f.get("note_quote"):
-                    st.button("↪ source", key=f"src_{d['dimension']}_{i}",
-                              on_click=_focus_note, args=(f["note_id"], f["note_quote"]))
+                    bc[0].button("↪", key=f"src_{d['dimension']}_{i}", help="show source note",
+                                 on_click=_focus_note, args=(f["note_id"], f["note_quote"]))
+                bc[1].button("✓", key=f"val_{d['dimension']}_{i}", help="valid issue",
+                             on_click=_toggle_finding_label,
+                             args=(case["case_id"], fkey, "valid", meta))
+                bc[2].button("✗", key=f"fa_{d['dimension']}_{i}", help="false alarm",
+                             on_click=_toggle_finding_label,
+                             args=(case["case_id"], fkey, "false_alarm", meta))
 
         # Per-dimension human adjudication (override just this dimension).
         with st.expander(f"✎ adjudicate · {d['dimension']}"):
@@ -637,9 +658,40 @@ def render_live_judge():
                 st.info("Enter a summary and notes, then **Judge**.")
 
 
+def render_calibrate():
+    st.subheader("Finding-level calibration (precision)")
+    st.caption("Precision = of the jury's flagged findings you reviewed, how many were valid. "
+               "Label findings in the Summary Explorer (✓ valid / ✗ false alarm). Recall "
+               "(issues the jury missed) is a planned next step.")
+    s = service.precision_stats()
+    if not s["labeled_cases"]:
+        st.info("No labeled findings yet. In the Summary Explorer, run the jury on a case "
+                "and mark each issue ✓ valid / ✗ false alarm.")
+        return
+
+    cols = st.columns(3)
+    cols[0].metric("Labeled cases", s["labeled_cases"])
+    cols[1].metric("Labeled findings", s["total_labeled"])
+    cols[2].metric("Overall precision", "—" if s["overall_precision"] is None else s["overall_precision"])
+
+    rows = [{"dimension": d, **v} for d, v in s["per_dimension"].items()]
+    if rows:
+        df = pd.DataFrame(rows)[["dimension", "labeled", "validated", "false_alarms", "precision"]]
+        st.dataframe(df, hide_index=True, width="stretch")
+
+    if s["false_alarms"]:
+        st.markdown("**False alarms** (jury flagged, you rejected) — the tuning signal")
+        for fa in s["false_alarms"]:
+            st.markdown(
+                f"- <small>`{fa['case']}` · **{fa['dimension']}** — "
+                f"summary: “{html.escape(fa.get('summary_quote') or '—')}” · "
+                f"note: “{html.escape(fa.get('note_quote') or '—')}”</small>",
+                unsafe_allow_html=True)
+
+
 def main():
     render_header()
-    NAV = ["Overview", "Summary Explorer", "Jury Config", "Live Judge"]
+    NAV = ["Overview", "Summary Explorer", "Jury Config", "Live Judge", "Calibrate"]
     if st.session_state.get("nav") not in NAV:
         st.session_state.nav = "Overview"
     # Server-side section selector (not st.tabs) so we can switch programmatically
@@ -654,8 +706,10 @@ def main():
         render_explorer()
     elif choice == "Jury Config":
         render_jury_config()
-    else:
+    elif choice == "Live Judge":
         render_live_judge()
+    else:
+        render_calibrate()
 
 
 if __name__ == "__main__":

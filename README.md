@@ -181,6 +181,11 @@ models × personas**; a preview shows the resulting juror count and calls-per-ca
 (break-it-live). Nothing persists unless you **Save as case** (which drops it
 into the Explorer).
 
+**Calibrate** (#4 core) — finding-level calibration. In a verdict (Explorer),
+mark each jury finding **✓ valid / ✗ false alarm**; the Calibrate tab reports
+per-dimension **precision** (validated ÷ labeled) and drills into the false
+alarms — the tuning signal. Recall (issues the jury *missed*) is the next step.
+
 ## Files
 
 | File | Role |

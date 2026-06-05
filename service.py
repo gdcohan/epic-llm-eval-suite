@@ -10,6 +10,7 @@ import re
 import glob
 import json
 import uuid
+import hashlib
 from collections import defaultdict
 from datetime import datetime, timezone
 
@@ -167,6 +168,61 @@ def load_verdict(case_id):
 # ----------------------------------------------------------- adjudication
 def get_adjudication(case_id):
     return persistence.load_adjudication(case_id)
+
+
+def finding_key(dimension, member, summary_quote, note_quote):
+    """Stable content-hash id for one juror's finding (label-per-juror, V1)."""
+    raw = "|".join([dimension or "", member or "",
+                    (summary_quote or "").strip(), (note_quote or "").strip()])
+    return hashlib.sha1(raw.encode()).hexdigest()[:12]
+
+
+def set_finding_label(case_id, key, label, meta):
+    """Set/clear a human label on one jury finding. label: 'valid' | 'false_alarm'
+    | None (clear). meta carries dimension/spans/member for later metrics."""
+    adj = persistence.load_adjudication(case_id) or {"case_id": case_id, "dimensions": {}, "rationales": {}}
+    adj.setdefault("finding_labels", {})
+    if label is None:
+        adj["finding_labels"].pop(key, None)
+    else:
+        adj["finding_labels"][key] = {"label": label, **meta}
+    adj["adjudicated_at"] = datetime.now(timezone.utc).isoformat()
+    persistence.save_adjudication(adj)
+    return adj
+
+
+def precision_stats():
+    """Finding-level precision across all labeled cases: of the jury's flagged
+    findings the human reviewed, how many were valid (vs false alarms)."""
+    tp, fp = defaultdict(int), defaultdict(int)
+    false_alarms = []
+    labeled_cases = 0
+    for c in list_cases():
+        adj = persistence.load_adjudication(c["case_id"])
+        labels = (adj or {}).get("finding_labels") or {}
+        if not labels:
+            continue
+        labeled_cases += 1
+        for lbl in labels.values():
+            dim = lbl.get("dimension")
+            if lbl.get("label") == "valid":
+                tp[dim] += 1
+            elif lbl.get("label") == "false_alarm":
+                fp[dim] += 1
+                false_alarms.append({"case": c["case_id"], **lbl})
+    per_dim = {}
+    for d in sorted(set(list(tp) + list(fp))):
+        t, f = tp[d], fp[d]
+        per_dim[d] = {"labeled": t + f, "validated": t, "false_alarms": f,
+                      "precision": round(t / (t + f), 2) if (t + f) else None}
+    total_t, total_f = sum(tp.values()), sum(fp.values())
+    return {
+        "per_dimension": per_dim,
+        "labeled_cases": labeled_cases,
+        "total_labeled": total_t + total_f,
+        "overall_precision": round(total_t / (total_t + total_f), 2) if (total_t + total_f) else None,
+        "false_alarms": false_alarms,
+    }
 
 
 def set_dimension_adjudication(case_id, dimension, score, rationale, adjudicator):
