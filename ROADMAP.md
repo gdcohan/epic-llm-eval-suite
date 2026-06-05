@@ -31,20 +31,28 @@ agreement across jurors) + aggregated flagged issues.
 
 ### 4. Calibration / tuning (near term)  · *needs API keys to run*
 
-A **labeled example = a case + its human adjudication** (both already exist), so
-the benchmark is just the set of adjudicated cases. Two ways to create them:
-- **De novo** — author a summary + notes + per-dimension human scores in one
-  form, without running the jury.
-- **Via live judging** — judge in the scratchpad, adjudicate the result, and Save
-  as a labeled example (Live Judge gains adjudication controls + save).
+**The unit of calibration is a finding, not a whole case** (a full-case score
+over many notes is noisy and unattributable). A labeled example = a jury finding
+(dimension + summary span + note span) + a human label (valid issue / false
+alarm). The full case stays the *demo* unit; findings are the calibration signal
+-- atomic and attributable.
 
-**Measurement layer** (a new **Calibrate** tab): run the current jury config over
-all labeled examples and report jury-vs-human agreement per dimension (mean
-delta, where it splits) + a ranked, drill-into list of the biggest disagreements.
-"Is the jury any good?"
+Create labeled findings two ways:
+- **Via judging** — the human thumbs-up/down each jury finding in the verdict
+  (this is the primary adjudication, in the Explorer and Live Judge).
+- **De novo** — author a minimal probe: one dimension, a summary snippet, a note
+  snippet, and the gold call.
+
+**Measurement** (a new **Calibrate** tab), precision-first: per-dimension
+precision (of the jury's flagged findings, how many the human validated) + drill
+into the false alarms. A thin per-dimension score adjudication remains as a
+secondary roll-up.
+
+*Next step after the core:* **recall** — a UI to author the issues the jury
+*missed* (false negatives), enabling recall/F1, not just precision.
 
 **Manual tuning loop** (bucket 1): a pin / before-after **compare** in Live Judge
-so a prompt/panel change visibly moves the scores on an example.
+so a prompt/panel change visibly moves the result on an example.
 
 Higher rungs are later (they need more labeled volume): few-shot anchoring with
 adjudicated examples, score recalibration (learn jury→human offsets), and
