@@ -50,8 +50,8 @@ Higher rungs are later (they need more labeled volume): few-shot anchoring with
 adjudicated examples, score recalibration (learn jury→human offsets), and
 LLM-proposed prompt edits. Train/test split matters once examples feed the prompt.
 
-*Enabler to decide:* named config snapshots/experiments (so verdicts know which
-config produced them) for honest A/B and measurement.
+*Mid-term:* true A/B config experiments — named config snapshots so verdicts
+record which config produced them; compare two configs over the benchmark.
 
 ## Future (punted)
 
