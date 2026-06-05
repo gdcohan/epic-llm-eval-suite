@@ -29,12 +29,29 @@ agreement across jurors) + aggregated flagged issues.
   fetch-by-ID**, judge, **break-it-live**.
 *Deliverable:* the coworker demo.
 
-### 4. Validation harness  · *needs API keys to run*
-Turn the faithful/flawed pairs into a labeled benchmark with metrics: does the
-jury reliably separate good/bad, does the right dimension catch the right error,
-how often do jurors agree?
-*Why last:* formalizes step-1 calibration; becomes the back-end of the future
-calibrator screen.
+### 4. Calibration / tuning (near term)  · *needs API keys to run*
+
+A **labeled example = a case + its human adjudication** (both already exist), so
+the benchmark is just the set of adjudicated cases. Two ways to create them:
+- **De novo** — author a summary + notes + per-dimension human scores in one
+  form, without running the jury.
+- **Via live judging** — judge in the scratchpad, adjudicate the result, and Save
+  as a labeled example (Live Judge gains adjudication controls + save).
+
+**Measurement layer** (a new **Calibrate** tab): run the current jury config over
+all labeled examples and report jury-vs-human agreement per dimension (mean
+delta, where it splits) + a ranked, drill-into list of the biggest disagreements.
+"Is the jury any good?"
+
+**Manual tuning loop** (bucket 1): a pin / before-after **compare** in Live Judge
+so a prompt/panel change visibly moves the scores on an example.
+
+Higher rungs are later (they need more labeled volume): few-shot anchoring with
+adjudicated examples, score recalibration (learn jury→human offsets), and
+LLM-proposed prompt edits. Train/test split matters once examples feed the prompt.
+
+*Enabler to decide:* named config snapshots/experiments (so verdicts know which
+config produced them) for honest A/B and measurement.
 
 ## Future (punted)
 
