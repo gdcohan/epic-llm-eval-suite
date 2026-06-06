@@ -61,6 +61,17 @@ def _highlight(text, quotes, mark_color="#fff3a3"):
             f"font-size:0.85em;line-height:1.4'>{esc}</div>")
 
 
+def _harm_badge(f):
+    """Severity-colored harm badge (always includes the severity word) for a finding."""
+    sev = (f.get("harm_severity") or "").strip().lower()
+    if not sev:
+        return ""
+    color = {"severe": "#c62828", "moderate": "#f9a825", "low": "#6c757d"}.get(sev, "#6c757d")
+    cat = f.get("harm_category")
+    label = sev + (f" · {cat}" if cat else "")
+    return " " + _badge(label, color)
+
+
 def _issue_findings(dimension):
     return [f for f in dimension.get("findings", []) if f.get("type") == "issue"]
 
@@ -279,7 +290,7 @@ def render_summary_and_verdict(case):
             tag = {"valid": " <b>✓</b>", "false_alarm": " <b>✗</b>"}.get(cur_label, "")
             cols = st.columns([7, 3])
             with cols[0]:
-                line = f"<small>⚠ {html.escape(f.get('explanation',''))}{tag}"
+                line = f"<small>⚠ {html.escape(f.get('explanation',''))}{tag}{_harm_badge(f)}"
                 if f.get("summary_quote"):
                     line += f"<br>· summary: “<i>{html.escape(f['summary_quote'])}</i>”"
                 if f.get("note_quote"):
@@ -573,7 +584,7 @@ def _render_verdict_block(verdict, src_key, focus_cb):
         for i, f in enumerate(_issue_findings(d)):
             cols = st.columns([8, 2])
             with cols[0]:
-                line = f"<small>⚠ {html.escape(f.get('explanation', ''))}"
+                line = f"<small>⚠ {html.escape(f.get('explanation', ''))}{_harm_badge(f)}"
                 if f.get("summary_quote"):
                     line += f"<br>· summary: “<i>{html.escape(f['summary_quote'])}</i>”"
                 if f.get("note_quote"):

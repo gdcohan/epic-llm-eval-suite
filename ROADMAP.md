@@ -63,6 +63,12 @@ record which config produced them; compare two configs over the benchmark.
 
 ## Future (punted)
 
+- **Harm matrix** — *V1 built*: each issue finding is tagged inline with a
+  clinical `harm_category` and `harm_severity` (low/moderate/severe), shown as a
+  badge. *V2*: a dedicated harm pass (decouple severity from the flagging
+  juror's leniency), a likelihood axis (severity × likelihood risk matrix), and
+  roll-up to a per-summary risk heatmap / score + harm-weighted calibration.
+
 - ~~**Citations (V2)**~~ — *pulled forward into 3a*: jurors emit structured
   findings (score + synopsis + issues with verbatim summary/note quotes +
   note_id), source-linked and highlighted in the Explorer.

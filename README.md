@@ -155,7 +155,9 @@ a two-column body (independently scrollable):
   highlighted), then per-dimension score, **disagreement** (agreement badge +
   each juror's score and one-line synopsis), and **structured, source-linked
   findings** — "summary said *X*, note *N* says *Y*" with a **↪ source** button
-  that opens the cited note and highlights the span.
+  that opens the cited note and highlights the span. Each issue also carries a
+  **harm badge** (clinical severity · category) so a dangerous error stands out
+  from a cosmetic one.
   Plus **✎ Adjudicate** — set a final per-dimension human score (e.g. resolve a
   2-vs-4 split as a 4). Adjudications are stored separately from the jury verdict,
   survive re-runs, and become the ground-truth labels for the future calibrator.

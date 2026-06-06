@@ -67,7 +67,20 @@ OUTPUT_CONTRACT = (
     "       a SOURCE NOTE, or null if not applicable;\n"
     '     - "note_id": the id= of the source note that note_quote came from\n'
     "       (use the id shown in that note's header), or null;\n"
-    '     - "explanation": a brief statement of what this finding shows.\n'
+    '     - "explanation": a brief statement of what this finding shows;\n'
+    '     - "harm_category" (issue findings only): one of [medication/dosing,\n'
+    "       allergy, diagnosis, test/result, follow-up/plan, demographic/admin,\n"
+    "       other];\n"
+    '     - "harm_severity" (issue findings only): one of [low, moderate, severe]\n'
+    "       -- the potential CLINICAL HARM if this issue went uncorrected and were\n"
+    "       acted on. Rate severity on its clinical merits, INDEPENDENTLY of how\n"
+    "       strict or lenient you are about flagging issues. low = cosmetic or\n"
+    "       administrative, easily caught, no likely clinical impact (e.g. a wrong\n"
+    "       visit date); moderate = could affect management or cause non-critical\n"
+    "       harm (e.g. an omitted stable chronic problem, an imprecise but\n"
+    "       non-dangerous dose); severe = could lead to serious harm if acted on\n"
+    "       (e.g. a wrong allergy, a 10x dosing error, a missed critical actionable\n"
+    "       diagnosis).\n"
     "CRITICAL: quotes are matched programmatically (exact substring) to link each\n"
     "finding back to the source and highlight it in the UI. Copy them verbatim --\n"
     "do NOT paraphrase, summarize, truncate with ellipses, fix typos, or change\n"
