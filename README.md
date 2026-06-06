@@ -144,10 +144,12 @@ A section selector across the top switches between **Overview**, **Summary
 Explorer**, and (soon) Jury Config / Live Judge.
 
 **Overview** — a cross-case dashboard: KPIs (cases, judged, avg overall, # with
-issues, # juror splits), avg-score and issue-count bar charts by dimension, and a
-sortable **case scorecard** (per-dimension scores, low values shaded red). The
-*With issues* KPI filters the scorecard to just those cases, and selecting a row
-opens that case in the Explorer.
+issues, **# with a severe issue**, # juror splits), avg-score and issue-count bar
+charts by dimension, a **harm matrix** (category × severity, counted by case),
+and a sortable **case scorecard** (per-dimension scores shaded red + a **max-harm**
+column). The *With issues* and *Severe* KPIs filter the scorecard, and selecting a
+row opens that case in the Explorer. (Harm aggregates are case-level — robust to
+panel size — and appear on live runs.)
 
 **Summary Explorer** (V1, 3a) has the ingested summaries in the left sidebar and
 a two-column body (independently scrollable):

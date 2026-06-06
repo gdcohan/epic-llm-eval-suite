@@ -80,7 +80,7 @@ def _issue_findings(dimension):
 def render_overview():
     s = service.overview_stats()
     k = s["kpis"]
-    cols = st.columns(5)
+    cols = st.columns(6)
     cols[0].metric("Cases", k["cases"])
     cols[1].metric("Judged", k["judged"])
     cols[2].metric("Avg overall", "—" if k["avg_overall"] is None else k["avg_overall"])
@@ -88,8 +88,15 @@ def render_overview():
         st.metric("With issues", k["with_issues"])
         if st.button("show these »", key="filter_issues", disabled=not k["with_issues"]):
             st.session_state.issues_only = True
+            st.session_state.pop("severe_only", None)
             st.rerun()
-    cols[4].metric("Juror splits", k["splits"])
+    with cols[4]:
+        st.metric("⚠ Severe", k.get("severe_cases", 0))
+        if st.button("show these »", key="filter_severe", disabled=not k.get("severe_cases")):
+            st.session_state.severe_only = True
+            st.session_state.pop("issues_only", None)
+            st.rerun()
+    cols[5].metric("Juror splits", k["splits"])
 
     if k["judged"] == 0:
         st.info("No judged cases yet — judge some in the Summary Explorer.")
@@ -105,21 +112,46 @@ def render_overview():
         if s["issues_by_dim"]:
             st.bar_chart(pd.DataFrame({"issues": s["issues_by_dim"]}))
 
+    st.caption("Harm matrix — # cases with ≥1 issue by category × severity")
+    hm = s.get("harm_matrix") or {}
+    if not hm:
+        st.caption("No harm-tagged findings yet (harm appears on live jury runs).")
+    else:
+        sev_cols = ["low", "moderate", "severe"]
+        cats = ([c for c in service.HARM_CATEGORIES if c in hm]
+                + [c for c in hm if c not in service.HARM_CATEGORIES])
+        hrows = [{"category": cat, **{sv: hm.get(cat, {}).get(sv, 0) for sv in sev_cols}} for cat in cats]
+        hstyler = pd.DataFrame(hrows)[["category"] + sev_cols].style
+        for sv, color in [("low", "#6c757d"), ("moderate", "#f9a825"), ("severe", "#c62828")]:
+            hstyler = hstyler.map(
+                lambda v, c=color: f"background-color:{c}; color:white"
+                if isinstance(v, (int, float)) and v > 0 else "", subset=[sv])
+        st.dataframe(hstyler, hide_index=True, width="stretch")
+
     dims = s["dims"]
-    col_order = ["case", "overall"] + dims + ["issues", "adjudicated", "agreement"]
+    col_order = ["case", "overall"] + dims + ["issues", "max_harm", "adjudicated", "agreement"]
     df = pd.DataFrame(s["rows"])
     for col in col_order:
         if col not in df.columns:
             df[col] = None
     df = df[col_order]
+    df["max_harm"] = df["max_harm"].fillna("").replace("", "—")
 
     issues_only = st.session_state.get("issues_only", False)
-    if issues_only:
+    severe_only = st.session_state.get("severe_only", False)
+    if severe_only:
+        df_display = df[df["max_harm"] == "severe"]
+        head, clear = st.columns([4, 1])
+        head.caption(f"Case scorecard — only the {len(df_display)} case(s) with a severe issue")
+        if clear.button("× show all"):
+            st.session_state.pop("severe_only", None)
+            st.rerun()
+    elif issues_only:
         df_display = df[pd.to_numeric(df["issues"], errors="coerce").fillna(0) > 0]
         head, clear = st.columns([4, 1])
         head.caption(f"Case scorecard — only the {len(df_display)} case(s) with issues")
         if clear.button("× show all"):
-            st.session_state.issues_only = False
+            st.session_state.pop("issues_only", None)
             st.rerun()
     else:
         df_display = df
@@ -132,9 +164,15 @@ def render_overview():
             return ""
         return f"background-color: {_score_color(val)}; color: white"
 
+    def _harm_style(val):
+        c = {"severe": "#c62828", "moderate": "#f9a825", "low": "#6c757d"}.get(val)
+        return f"background-color: {c}; color: white" if c else ""
+
     styler = df_display.style
     styler = styler.map(_style, subset=score_cols) if hasattr(styler, "map") \
         else styler.applymap(_style, subset=score_cols)
+    if hasattr(styler, "map"):
+        styler = styler.map(_harm_style, subset=["max_harm"])
     styler = styler.format(precision=2)
 
     event = st.dataframe(styler, hide_index=True, width="stretch",

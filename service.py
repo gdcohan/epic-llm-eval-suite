@@ -26,6 +26,10 @@ from jury import run_jury
 
 CASE_SOURCES = [cases.CASES_DIR, os.path.join("examples", "cases")]
 
+HARM_CATEGORIES = ["medication/dosing", "allergy", "diagnosis", "test/result",
+                   "follow-up/plan", "demographic/admin", "other"]
+_SEV_ORDER = {"low": 1, "moderate": 2, "severe": 3}
+
 
 def _slug(text, fallback="case"):
     return re.sub(r"[^a-z0-9]+", "-", (text or "").lower()).strip("-")[:40] or fallback
@@ -251,6 +255,8 @@ def overview_stats():
     cases = list_cases()
     rows, dims_order = [], []
     dim_scores, dim_issues = defaultdict(list), defaultdict(int)
+    harm_matrix = defaultdict(lambda: defaultdict(int))  # category -> severity -> #cases
+    severe_cases = 0
     n_judged = 0
 
     for c in cases:
@@ -264,6 +270,7 @@ def overview_stats():
         adj_dims = (persistence.load_adjudication(c["case_id"]) or {}).get("dimensions", {})
         row = {"case": c["case_id"], "overall": verdict.get("overall_score"),
                "issues": 0, "agreement": "split" if splits else "agreed", "judged": True}
+        case_cells, case_sevs = set(), set()  # case-level harm (robust to juror count)
         for d in verdict.get("dimensions", []):
             name = d["dimension"]
             if name not in dims_order:
@@ -273,9 +280,21 @@ def overview_stats():
             row[name] = final
             if isinstance(final, (int, float)):
                 dim_scores[name].append(final)
-            n_iss = sum(1 for f in d.get("findings", []) if f.get("type") == "issue")
-            dim_issues[name] += n_iss
-            row["issues"] += n_iss
+            for f in d.get("findings", []):
+                if f.get("type") != "issue":
+                    continue
+                dim_issues[name] += 1
+                row["issues"] += 1
+                sev = (f.get("harm_severity") or "").strip().lower()
+                if sev in _SEV_ORDER:
+                    case_sevs.add(sev)
+                    cat = (f.get("harm_category") or "other").strip() or "other"
+                    case_cells.add((cat, sev))
+        row["max_harm"] = max(case_sevs, key=lambda s: _SEV_ORDER[s]) if case_sevs else ""
+        if "severe" in case_sevs:
+            severe_cases += 1
+        for cat, sev in case_cells:
+            harm_matrix[cat][sev] += 1
         row["adjudicated"] = ("✎ " + ", ".join(sorted(adj_dims))) if adj_dims else ""
         rows.append(row)
 
@@ -285,6 +304,7 @@ def overview_stats():
         "judged": n_judged,
         "avg_overall": round(sum(overalls) / len(overalls), 2) if overalls else None,
         "with_issues": sum(1 for r in rows if r.get("issues")),
+        "severe_cases": severe_cases,
         "splits": sum(1 for r in rows if r.get("agreement") == "split"),
     }
     return {
@@ -293,6 +313,7 @@ def overview_stats():
         "kpis": kpis,
         "avg_by_dim": {d: round(sum(s) / len(s), 2) for d, s in dim_scores.items() if s},
         "issues_by_dim": dict(dim_issues),
+        "harm_matrix": {cat: dict(sevs) for cat, sevs in harm_matrix.items()},
     }
 
 
