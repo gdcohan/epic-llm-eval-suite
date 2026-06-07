@@ -52,8 +52,24 @@ precision (of the jury's flagged findings, how many the human validated) + drill
 into the false alarms. A thin per-dimension score adjudication remains as a
 secondary roll-up.
 
-*Next step after the core:* **recall** — a UI to author the issues the jury
-*missed* (false negatives), enabling recall/F1, not just precision.
+*Next step after the core:* **recall (finding-level)** — a UI to author the
+issues the jury *missed* (false negatives), enabling recall/F1, not just
+precision.
+- **Unit:** same atomic finding (dimension + summary span + note span), but
+  human-originated — overlaps with de-novo probe authoring.
+- **Metric:** recall = gold issues caught ÷ total gold issues.
+- **V1 (buildable now, no new primitive):** treat recall labels like precision
+  labels — tied to a specific verdict. The human authors "the jury missed X here"
+  (pick dimension + quote the span); it counts as a false negative for *that*
+  run. No semantic matching required. Limitation: the label doesn't auto-carry to
+  a re-judge (same content-key orphaning as precision labels).
+- **Richer (later):** to credit a re-run where the jury *does* surface a
+  previously "missed" issue, you need to match jury findings ↔ gold findings (span
+  overlap / semantic match) — i.e. the finding-matching / span-grouping primitive
+  punted to V2 dedup. That's the real unlock for durable recall.
+- **Authoring UX is the work:** unlike a thumbs-down on an existing finding,
+  there's no span to click — the human must select/quote the missed span and tag
+  it.
 
 **Manual tuning loop** (bucket 1): a pin / before-after **compare** in Live Judge
 so a prompt/panel change visibly moves the result on an example.
@@ -61,6 +77,23 @@ so a prompt/panel change visibly moves the result on an example.
 Higher rungs are later (they need more labeled volume): few-shot anchoring with
 adjudicated examples, score recalibration (learn jury→human offsets), and
 LLM-proposed prompt edits. Train/test split matters once examples feed the prompt.
+
+**Few-shot anchoring (detail):** inject scored exemplars into the juror prompts to
+calibrate behavior toward the human ("an expert rated this span a false alarm / a
+severe accuracy issue because…"), per dimension.
+- **V1 (cheap precursor, no benchmark dependency):** hand-author a few canonical
+  rubric exemplars directly in the prompt. They're not eval data, so there's **no
+  leakage and no volume requirement** — it's prompt engineering with worked
+  examples. Wires into the existing editable output contract / show-the-prompt.
+- **Richer (later):** harvest exemplars from the adjudicated benchmark (the
+  labeled findings). More powerful, but blocked on two things: (1) **leakage** —
+  anchors must come from a held-out split, never the eval set; (2) **volume** — a
+  handful of cases isn't enough to anchor *and* evaluate (the main argument for the
+  synthetic-summary generator). Open design Qs: which examples to select (false
+  alarms? hardest/most-disputed? balanced?), how many, exemplar format,
+  per-dimension wiring.
+- **Dependency order:** V1 anytime; the harvested version needs synthetic
+  summaries + a train/test split first.
 
 *Mid-term:* true A/B config experiments — named config snapshots so verdicts
 record which config produced them; compare two configs over the benchmark.
