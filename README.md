@@ -64,15 +64,18 @@ with dated headers). The jury *requires* a summary. Defaults:
 
 - **accuracy** — is every claim *faithful to the notes*? (grounding)
 - **comprehensiveness** — does it capture all clinically significant info?
-- **correctness** — is it *medically sound and internally coherent on its own
-  terms*? A claim can be accurate (in the notes) yet incorrect (e.g.
-  "atorvastatin for diabetes"); this juror uses clinical knowledge and does not
-  treat "it's in the notes" as a defense.
+  (heuristic: if omitting it could change management, penalize)
+- **correctness** — is it *intrinsically sound and internally coherent*, judged
+  on its own merits **independently of the notes**? A claim can be accurate (in
+  the notes) yet incorrect (e.g. "atorvastatin for diabetes"), and being absent
+  from the notes is not a correctness problem (that's accuracy's job).
 
-**Recency reconciliation:** notes span time and may disagree. A shared guidance
-clause tells jurors to treat the **more recent** note as authoritative when
-notes conflict (unless it's clearly erroneous), so a summary reflecting the
-current picture isn't penalized for "contradicting" a superseded older note.
+**Conflict reconciliation:** source notes can disagree, so a shared guidance
+clause tells jurors to judge the summary against the correctly *reconciled*
+picture — handling temporal/superseded updates (newer wins), preliminary-vs-final
+and suspected-vs-confirmed status, source authority (e.g. a signed addendum),
+specificity, and repeated measures, with a conservative clear-error rule and an
+unresolved-conflict → uncertainty fallback.
 
 Each dimension is judged by every panel member and aggregated: per-dimension
 mean **plus disagreement** (score spread + an agreement label: unanimous / minor
@@ -141,7 +144,7 @@ python examples/generate_demo_cases.py
 ```
 
 A section selector across the top switches between **Overview**, **Summary
-Explorer**, and (soon) Jury Config / Live Judge.
+Explorer**, **Jury Config**, **Live Judge**, and **Calibrate**.
 
 **Overview** — a cross-case dashboard: KPIs (cases, judged, avg overall, # with
 issues, **# with a severe issue**, # juror splits), avg-score and issue-count bar
@@ -196,13 +199,14 @@ alarms — the tuning signal. Recall (issues the jury *missed*) is the next step
 |---|---|
 | `epic_client.py` | Epic FHIR client: OAuth2/JWT auth, tolerant note resolver, Binary fetch, discovery |
 | `note_extractor.py` | `DocumentReference` → normalized note (text + addenda + metadata) |
-| `persistence.py` | Local JSON persistence for notes and verdicts |
-| `llm_providers.py` | Pluggable LLM providers (OpenAI / Anthropic / Stub) |
-| `dimensions.py` | Jury dimensions (one prompt per jurist) + shared recency guidance |
-| `jury.py` | Panel runner, multi-note aggregation + scoring |
+| `persistence.py` | Local JSON persistence for notes, verdicts, adjudications |
+| `llm_providers.py` | Pluggable LLM providers (Anthropic / OpenAI / Gemini / Stub) |
+| `dimensions.py` | Default dimensions + shared reconciliation guidance + output contract (incl. harm) |
+| `config.py` | Editable jury config (dimensions / personas / models / guidance / contract); panel = models × personas |
+| `jury.py` | Panel runner, multi-note aggregation + scoring + disagreement |
 | `cases.py` | Eval-case manifests (summary ↔ source note IDs) |
-| `service.py` | Service layer for CLI/UI: list/create/judge cases, gather notes |
-| `app.py` | Streamlit UI (Summary Explorer) |
+| `service.py` | Service layer for CLI/UI: cases, notes, adjudication, overview/precision stats |
+| `app.py` | Streamlit UI (Overview / Explorer / Jury Config / Live Judge / Calibrate) |
 | `mock_client.py`, `mock_data/` | Offline fixtures for the demo |
-| `examples/cases/` | Sample eval cases (recency demo + MATERA faithful/flawed) |
+| `examples/cases/`, `examples/generate_demo_cases.py` | Sample cases + the 5 lifespan demo-case generator |
 | `main.py` | CLI |
