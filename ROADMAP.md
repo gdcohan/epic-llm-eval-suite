@@ -3,6 +3,10 @@
 Living plan for the Epic note-fetcher + LLM-as-jury POC. Build order is
 sequential — each step assumes the previous is done.
 
+> **Load-bearing invariant:** the output contract (editable in Jury Config) must
+> keep the `score` / `synopsis` / `findings` keys — drop them and scoring + source
+> links break.
+
 ## Build order
 
 ### 1. Live smoke test + calibration  · *needs API keys*
