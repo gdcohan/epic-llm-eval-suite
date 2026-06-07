@@ -31,6 +31,10 @@ agreement across jurors) + aggregated flagged issues.
 
 ### 4. Calibration / tuning (near term)  · *needs API keys to run*
 
+*(Core built: finding-level ✓/✗ labeling in the Explorer verdict + a Calibrate
+tab with per-dimension precision and a false-alarm drill-down. Remaining: de novo
+probe authoring, then recall.)*
+
 **The unit of calibration is a finding, not a whole case** (a full-case score
 over many notes is noisy and unattributable). A labeled example = a jury finding
 (dimension + summary span + note span) + a human label (valid issue / false
@@ -39,7 +43,7 @@ alarm). The full case stays the *demo* unit; findings are the calibration signal
 
 Create labeled findings two ways:
 - **Via judging** — the human thumbs-up/down each jury finding in the verdict
-  (this is the primary adjudication, in the Explorer and Live Judge).
+  (primary adjudication; built in the Explorer — Live Judge labeling is a follow-up).
 - **De novo** — author a minimal probe: one dimension, a summary snippet, a note
   snippet, and the gold call.
 
@@ -72,8 +76,8 @@ record which config produced them; compare two configs over the benchmark.
 - ~~**Citations (V2)**~~ — *pulled forward into 3a*: jurors emit structured
   findings (score + synopsis + issues with verbatim summary/note quotes +
   note_id), source-linked and highlighted in the Explorer.
-- **Jury calibrator screen** — human-in-the-loop on top of the validation
-  harness: review known examples, see jury scores, adjudicate / overrule / score.
+- ~~**Jury calibrator screen**~~ — *folded into #4 (Calibrate tab + finding-level
+  adjudication).*
 - **Synthetic summary generation** — LLM summarizer + deliberate error-injection
   to produce labeled candidates at volume (feeds the harness; previews the real
   workflow).
