@@ -9,12 +9,12 @@ sequential — each step assumes the previous is done.
 
 ## Build order
 
-### 1. Live smoke test + calibration  · *needs API keys*
-Run the example cases (`matera_faithful` / `matera_flawed`, `recency_demo`)
-through the **real** panel. Confirm: scores separate good from bad, rationales
-name the planted errors, the recency clause holds. Tune the 1–5 scale anchoring,
-prompt wording, and **lock the panel** (which / how many models).
-*Deliverable:* a jury we trust enough to build a UI around.
+### 1. Live smoke test + calibration  · *✅ done (live flows validated)*
+Ran the demo cases through the **real** panel: scores separate good from bad,
+rationales name the planted errors, the recency clause holds, verbatim highlights
+land, harm/severity is sane. The "BIG gap" (no live run) is closed — real
+findings, harm badges, and the Calibrate precision numbers are now meaningful.
+*Deliverable (met):* a jury we trust enough to build calibration around.
 
 ### 2. Jury diversity + disagreement surfacing  · *offline-buildable*
 Informed by calibration: finalize the panel (single-provider personas vs. true
@@ -24,7 +24,7 @@ agreement across jurors) + aggregated flagged issues.
 
 ### 3. UI V1 (Streamlit)  · *offline-buildable, demoable*
 
-*(Built: 3a Explorer, Overview dashboard, adjudication, structured/source-linked verdicts; 3b Jury Config; 3c Live Judge. UI V1 complete.)*
+*(Built: 3a Explorer, Overview dashboard, adjudication, structured/source-linked verdicts; 3b Jury Config; 3c Live Judge. UI V1 complete. Demo polish since: harm-matrix cell drill-down, click-to-focus summary highlighting, scorecard autoscroll on filter.)*
 - **3a. Summary Explorer** — list ingested summaries (cases) → pick one → jury
   eval + disagreement + list of reference notes + note viewer.
 - **3b. Jury config** — add / toggle / remove dimensions, edit prompts,

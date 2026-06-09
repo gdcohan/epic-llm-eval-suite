@@ -8,17 +8,19 @@ durable lives in `README.md` (how it works + module map + concepts) and
 
 ## Current state / in-flight
 
-Everything is **validated in stub mode** (offline, deterministic) and via Streamlit
-`AppTest`. **No `JURY_MODE=live` run has happened yet** — so real findings, harm
-badges, Calibrate precision, and the Overview harm matrix are **empty/meaningless
-until a live run** (stub emits no findings).
+**Live flows are validated** (ROADMAP §1 done): the demo cases run through the real
+panel, planted errors get caught, verbatim highlights land, harm/severity is sane.
+The old "BIG gap" (no live run) is closed — real findings, harm badges, and the
+Calibrate precision numbers are now meaningful. The app is also validated in stub
+mode (offline) and via Streamlit `AppTest`.
 
-- **Highest-value next action:** a live shakedown (`JURY_MODE=live`, Claude +
-  Gemini) across the 5 demo cases — confirm prompts behave, planted errors get
-  caught, verbatim highlights land, harm/severity is sane. Doubles as the demo
-  rehearsal. (See ROADMAP §1.)
-- **Proven live:** fetching real notes from the Epic public sandbox (Jason
-  Argonaut), incl. the DocumentReference→Binary hop + markup/dedup cleanup.
+- **Demo-ready.** Recent demo polish: harm-matrix cell drill-down, click-to-focus
+  summary highlighting, scorecard autoscroll on filter.
+- **Next up:** complete calibration (ROADMAP §4) now that there are real findings to
+  label — **de novo probe authoring**, then **recall (finding-level)**. Also queued:
+  Live-Judge pin/compare, few-shot anchoring V1.
+- **Reminder:** stub emits no findings, so harm/precision/findings are still empty
+  in stub mode — exercise these against a live run.
 
 ## Gotchas that bite a new session
 

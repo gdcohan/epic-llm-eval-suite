@@ -150,17 +150,21 @@ Explorer**, **Jury Config**, **Live Judge**, and **Calibrate**.
 issues, **# with a severe issue**, # juror splits), avg-score and issue-count bar
 charts by dimension, a **harm matrix** (category × severity, counted by case),
 and a sortable **case scorecard** (per-dimension scores shaded red + a **max-harm**
-column). The *With issues* and *Severe* KPIs filter the scorecard, and selecting a
-row opens that case in the Explorer. (Harm aggregates are case-level — robust to
+column). The *With issues* and *Severe* KPIs filter the scorecard (and scroll it
+into view), and selecting a row opens that case in the Explorer. The harm matrix
+is **drillable** — a chip per non-zero cell lists those issue findings (case +
+quotes + harm badge), each with an **↪** that jumps to the case in the Explorer
+with the cited note highlighted. (Harm aggregates are case-level — robust to
 panel size — and appear on live runs.)
 
 **Summary Explorer** (V1, 3a) has the ingested summaries in the left sidebar and
 a two-column body (independently scrollable):
-- **col 1 — summary + judge synopsis**: the summary (with flagged spans
-  highlighted), then per-dimension score, **disagreement** (agreement badge +
-  each juror's score and one-line synopsis), and **structured, source-linked
-  findings** — "summary said *X*, note *N* says *Y*" with a **↪ source** button
-  that opens the cited note and highlights the span. Each issue also carries a
+- **col 1 — summary + judge synopsis**: the summary (clean by default), then
+  per-dimension score, **disagreement** (agreement badge + each juror's score and
+  one-line synopsis), and **structured, source-linked findings** — "summary said
+  *X*, note *N* says *Y*". Each finding has a **⌖** button that highlights just its
+  span in the summary (click-to-focus, toggles off) and a **↪ source** button that
+  opens the cited note and highlights the span there. Each issue also carries a
   **harm badge** (clinical severity · category) so a dangerous error stands out
   from a cosmetic one.
   Plus **✎ Adjudicate** — set a final per-dimension human score (e.g. resolve a
