@@ -319,6 +319,13 @@ def _focus_note(note_id, quote):
     st.session_state.focus_quote = quote
 
 
+def _focus_summary(quote):
+    """Toggle which finding's span is highlighted in the summary (click-to-focus,
+    the summary-side mirror of the ↪ source-note focus)."""
+    cur = st.session_state.get("focus_summary")
+    st.session_state.focus_summary = None if cur == quote else quote
+
+
 def _open_finding_in_explorer(case_id, note_id, quote):
     """Jump from an Overview drill-down to the case in the Explorer, with the
     cited note expanded + highlighted (reuses the focus-note plumbing)."""
@@ -339,16 +346,22 @@ def render_summary_and_verdict(case):
     summary = case.get("summary", {}) or {}
     verdict = service.load_verdict(case["case_id"])
 
-    # Highlight, in the summary, every quote the jury flagged as an issue.
-    flagged = []
-    if verdict:
-        for d in verdict["dimensions"]:
-            flagged += [f.get("summary_quote") for f in _issue_findings(d)]
-
     st.markdown(f"#### {case['case_id']}  <small>· source: {summary.get('source','—')}</small>",
                 unsafe_allow_html=True)
     st.markdown("**Summary**")
-    st.markdown(_highlight(summary.get("text", ""), flagged), unsafe_allow_html=True)
+    # Clean by default; highlight only the one finding span the user clicked (⌖
+    # below). Blanket-highlighting every juror's span across all dimensions lit up
+    # the whole summary, so it's now opt-in and one-at-a-time.
+    summary_text = summary.get("text", "")
+    focus_summary = st.session_state.get("focus_summary")
+    active = bool(focus_summary and focus_summary in summary_text)
+    st.markdown(_highlight(summary_text, [focus_summary] if active else []),
+                unsafe_allow_html=True)
+    has_issues = bool(verdict and any(_issue_findings(d) for d in verdict["dimensions"]))
+    if active:
+        st.caption("Showing one finding's span — click its ⌖ again to clear.")
+    elif has_issues:
+        st.caption("Tip: click ⌖ on a finding below to highlight its span here.")
     st.divider()
 
     label = "↻ Re-run jury" if verdict else "▶︎ Run jury"
@@ -406,7 +419,7 @@ def render_summary_and_verdict(case):
                                        f.get("summary_quote"), f.get("note_quote"))
             cur_label = (finding_labels.get(fkey) or {}).get("label")
             tag = {"valid": " <b>✓</b>", "false_alarm": " <b>✗</b>"}.get(cur_label, "")
-            cols = st.columns([7, 3])
+            cols = st.columns([6, 4])
             with cols[0]:
                 line = f"<small>&emsp;⚠ {html.escape(f.get('explanation',''))}{tag}{_harm_badge(f)}"
                 if f.get("summary_quote"):
@@ -420,14 +433,21 @@ def render_summary_and_verdict(case):
                 meta = {"dimension": d["dimension"], "member": f.get("member"),
                         "summary_quote": f.get("summary_quote"),
                         "note_quote": f.get("note_quote"), "note_id": f.get("note_id")}
-                bc = st.columns(3)
+                sq = f.get("summary_quote")
+                bc = st.columns(4)
+                if sq:
+                    active = st.session_state.get("focus_summary") == sq
+                    bc[0].button("⌖", key=f"sum_{d['dimension']}_{idx}",
+                                 help="highlight this span in the summary",
+                                 type="primary" if active else "secondary",
+                                 on_click=_focus_summary, args=(sq,))
                 if f.get("note_id") and f.get("note_quote"):
-                    bc[0].button("↪", key=f"src_{d['dimension']}_{idx}", help="show source note",
+                    bc[1].button("↪", key=f"src_{d['dimension']}_{idx}", help="show source note",
                                  on_click=_focus_note, args=(f["note_id"], f["note_quote"]))
-                bc[1].button("✓", key=f"val_{d['dimension']}_{idx}", help="valid issue",
+                bc[2].button("✓", key=f"val_{d['dimension']}_{idx}", help="valid issue",
                              on_click=_toggle_finding_label,
                              args=(case["case_id"], fkey, "valid", meta))
-                bc[2].button("✗", key=f"fa_{d['dimension']}_{idx}", help="false alarm",
+                bc[3].button("✗", key=f"fa_{d['dimension']}_{idx}", help="false alarm",
                              on_click=_toggle_finding_label,
                              args=(case["case_id"], fkey, "false_alarm", meta))
 
@@ -516,6 +536,11 @@ def render_explorer():
             idx = ids.index(cur) if cur in ids else 0
             sel = st.radio("cases", ids, index=idx, format_func=_fmt_factory(cases_list),
                            label_visibility="collapsed")
+            if sel != st.session_state.get("selected_case"):
+                # Switching cases: drop any focused summary/note span so highlights
+                # don't bleed across cases.
+                for k in ("focus_summary", "focus_note_id", "focus_quote"):
+                    st.session_state.pop(k, None)
             st.session_state.selected_case = sel
         else:
             st.caption("none yet — use ➕ New summary")
