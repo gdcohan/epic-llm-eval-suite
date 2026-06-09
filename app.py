@@ -78,6 +78,63 @@ def _issue_findings(dimension):
 
 
 # ------------------------------------------------------------- overview
+_SEV_DOT = {"severe": "🔴", "moderate": "🟠", "low": "⚪"}
+_SEV_RANK = {"severe": 0, "moderate": 1, "low": 2}
+
+
+def _harm_drilldown(hm, cats):
+    """Clickable chips for each non-zero harm cell → an inline list of those issue
+    findings (case + quotes + harm badge), each with an ↪ jump into the Explorer
+    with the cited note expanded + highlighted. The matrix counts cases per cell;
+    this list is per finding, so counts can differ (stated honestly in the header)."""
+    cells = [(cat, sev, hm[cat][sev]) for cat in cats for sev in ("severe", "moderate", "low")
+             if hm.get(cat, {}).get(sev)]
+    if not cells:
+        return
+    cells.sort(key=lambda x: (_SEV_RANK[x[1]], cats.index(x[0])))
+    st.caption("Drill into a harm cell:")
+    ncol = 4
+    for i in range(0, len(cells), ncol):
+        cols = st.columns(ncol)
+        for j, (cat, sev, cnt) in enumerate(cells[i:i + ncol]):
+            if cols[j].button(f"{_SEV_DOT[sev]} {cat} · {sev} ({cnt})",
+                              key=f"harmchip_{sev}_{cat}", width="stretch"):
+                st.session_state.harm_drill = [cat, sev]
+                st.rerun()
+
+    drill = st.session_state.get("harm_drill")
+    if not drill:
+        return
+    cat, sev = drill
+    if not hm.get(cat, {}).get(sev):  # cell vanished (data changed) — drop the stale drill
+        st.session_state.pop("harm_drill", None)
+        return
+    findings = service.findings_by_harm(cat, sev)
+    ncases = len({f["case_id"] for f in findings})
+    head, clear = st.columns([5, 1])
+    head.markdown(f"{_SEV_DOT[sev]} **{sev} · {cat}** — "
+                  f"{len(findings)} issue(s) across {ncases} case(s)")
+    if clear.button("× close", key="harm_drill_close"):
+        st.session_state.pop("harm_drill", None)
+        st.rerun()
+    for idx, f in enumerate(findings):
+        c0, c1 = st.columns([9, 1])
+        with c0:
+            line = (f"<small><b>{html.escape(f['case_id'])}</b> · {f.get('dimension', '')}"
+                    f"{_harm_badge(f)}<br>⚠ {html.escape(f.get('explanation') or '')}")
+            if f.get("summary_quote"):
+                line += f"<br>· summary: “<i>{html.escape(f['summary_quote'])}</i>”"
+            if f.get("note_quote"):
+                line += (f"<br>· note <code>{html.escape(str(f.get('note_id')))}</code>: "
+                         f"“<i>{html.escape(f['note_quote'])}</i>”")
+            line += f" <span style='color:#888'>[{html.escape(str(f.get('member')))}]</span></small>"
+            st.markdown(line, unsafe_allow_html=True)
+        with c1:
+            st.button("↪", key=f"harmopen_{idx}", help="open in Explorer",
+                      on_click=_open_finding_in_explorer,
+                      args=(f["case_id"], f.get("note_id"), f.get("note_quote")))
+
+
 def render_overview():
     s = service.overview_stats()
     k = s["kpis"]
@@ -130,6 +187,7 @@ def render_overview():
                 lambda v, c=color: f"background-color:{c}; color:white"
                 if isinstance(v, (int, float)) and v > 0 else "", subset=[sv])
         st.dataframe(hstyler, hide_index=True, width="stretch")
+        _harm_drilldown(hm, cats)
 
     dims = s["dims"]
     col_order = ["case", "overall"] + dims + ["issues", "max_harm", "adjudicated", "agreement"]
@@ -259,6 +317,17 @@ def render_new_summary():
 def _focus_note(note_id, quote):
     st.session_state.focus_note_id = note_id
     st.session_state.focus_quote = quote
+
+
+def _open_finding_in_explorer(case_id, note_id, quote):
+    """Jump from an Overview drill-down to the case in the Explorer, with the
+    cited note expanded + highlighted (reuses the focus-note plumbing)."""
+    st.session_state.selected_case = case_id
+    st.session_state.nav = "Summary Explorer"
+    if note_id and quote:
+        st.session_state.focus_note_id = note_id
+        st.session_state.focus_quote = quote
+    st.session_state.pop("scorecard", None)  # avoid a stale scorecard selection bouncing us
 
 
 def _toggle_finding_label(case_id, key, label, meta):

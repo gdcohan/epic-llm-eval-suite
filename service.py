@@ -317,6 +317,35 @@ def overview_stats():
     }
 
 
+def findings_by_harm(category, severity):
+    """All issue findings tagged with a given harm category + severity, across
+    every judged case. Powers the Overview harm-matrix drill-down. Severity and
+    category are normalized the same way overview_stats counts them, so the cell
+    count (by case) and this list (by finding) line up."""
+    severity = (severity or "").strip().lower()
+    category = (category or "other").strip() or "other"
+    out = []
+    for c in list_cases():
+        verdict = persistence.load_verdict(c["case_id"])
+        if not verdict:
+            continue
+        for d in verdict.get("dimensions", []):
+            for f in d.get("findings", []):
+                if f.get("type") != "issue":
+                    continue
+                sev = (f.get("harm_severity") or "").strip().lower()
+                cat = (f.get("harm_category") or "other").strip() or "other"
+                if sev == severity and cat == category:
+                    out.append({
+                        "case_id": c["case_id"], "dimension": d["dimension"],
+                        "member": f.get("member"), "summary_quote": f.get("summary_quote"),
+                        "note_quote": f.get("note_quote"), "note_id": f.get("note_id"),
+                        "explanation": f.get("explanation"),
+                        "harm_category": cat, "harm_severity": sev,
+                    })
+    return out
+
+
 def judge_case(case, fetch_missing=None):
     """Run the jury for a case against the totality of its notes. Cached and
     pasted notes are always used; uncached-by-id notes are fetched from Epic only
