@@ -12,6 +12,7 @@ import html
 import uuid
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 import service
 import config
@@ -89,12 +90,14 @@ def render_overview():
         if st.button("show these »", key="filter_issues", disabled=not k["with_issues"]):
             st.session_state.issues_only = True
             st.session_state.pop("severe_only", None)
+            st.session_state.scroll_to_scorecard = True
             st.rerun()
     with cols[4]:
         st.metric("⚠ Severe", k.get("severe_cases", 0))
         if st.button("show these »", key="filter_severe", disabled=not k.get("severe_cases")):
             st.session_state.severe_only = True
             st.session_state.pop("issues_only", None)
+            st.session_state.scroll_to_scorecard = True
             st.rerun()
     cols[5].metric("Juror splits", k["splits"])
 
@@ -136,6 +139,16 @@ def render_overview():
             df[col] = None
     df = df[col_order]
     df["max_harm"] = df["max_harm"].fillna("").replace("", "—")
+
+    # One-shot: after a "show these »" click the scorecard is below the fold, so
+    # scroll it into view. Injected here (just above the table) so the component's
+    # own iframe is the scroll target — no dependence on Streamlit element ids.
+    if st.session_state.pop("scroll_to_scorecard", False):
+        components.html(
+            "<script>const f = window.frameElement;"
+            "if (f) f.scrollIntoView({behavior: 'smooth', block: 'start'});</script>",
+            height=0,
+        )
 
     issues_only = st.session_state.get("issues_only", False)
     severe_only = st.session_state.get("severe_only", False)
