@@ -309,32 +309,30 @@ def render_summary_and_verdict(case):
                         + f" <small>(jury {d.get('mean_score')})</small>", unsafe_allow_html=True)
             if adj_rationales.get(d["dimension"]):
                 st.caption(f"✎ {adj_rationales[d['dimension']]}")
-        # Structured dispute: each juror's score + one-line synopsis.
-        for v in d.get("verdicts", []):
-            if v.get("error"):
-                st.markdown(f"- <small>**{v.get('member')}**: ⚠️ {v['error']}</small>", unsafe_allow_html=True)
-            else:
-                st.markdown(f"- <small>**{v.get('member')}** ({v.get('score')}): {v.get('synopsis','')}</small>",
-                            unsafe_allow_html=True)
-        # Structured findings with source links.
+        # Each juror: score + one-line synopsis, with that juror's own issues
+        # nested directly beneath it (rather than all jurors then all issues).
         issues = _issue_findings(d)
+        issues_by_member = {}
+        for f in issues:
+            issues_by_member.setdefault(f.get("member"), []).append(f)
         if issues:
             st.markdown("<small>**issues** — mark each ✓ valid / ✗ false alarm</small>",
                         unsafe_allow_html=True)
-        for i, f in enumerate(issues):
+
+        def _render_finding(f, idx):
             fkey = service.finding_key(d["dimension"], f.get("member"),
                                        f.get("summary_quote"), f.get("note_quote"))
             cur_label = (finding_labels.get(fkey) or {}).get("label")
             tag = {"valid": " <b>✓</b>", "false_alarm": " <b>✗</b>"}.get(cur_label, "")
             cols = st.columns([7, 3])
             with cols[0]:
-                line = f"<small>⚠ {html.escape(f.get('explanation',''))}{tag}{_harm_badge(f)}"
+                line = f"<small>&emsp;⚠ {html.escape(f.get('explanation',''))}{tag}{_harm_badge(f)}"
                 if f.get("summary_quote"):
-                    line += f"<br>· summary: “<i>{html.escape(f['summary_quote'])}</i>”"
+                    line += f"<br>&emsp;· summary: “<i>{html.escape(f['summary_quote'])}</i>”"
                 if f.get("note_quote"):
-                    line += (f"<br>· note <code>{html.escape(str(f.get('note_id')))}</code>: "
+                    line += (f"<br>&emsp;· note <code>{html.escape(str(f.get('note_id')))}</code>: "
                              f"“<i>{html.escape(f['note_quote'])}</i>”")
-                line += f" <span style='color:#888'>[{f.get('member')}]</span></small>"
+                line += "</small>"
                 st.markdown(line, unsafe_allow_html=True)
             with cols[1]:
                 meta = {"dimension": d["dimension"], "member": f.get("member"),
@@ -342,14 +340,36 @@ def render_summary_and_verdict(case):
                         "note_quote": f.get("note_quote"), "note_id": f.get("note_id")}
                 bc = st.columns(3)
                 if f.get("note_id") and f.get("note_quote"):
-                    bc[0].button("↪", key=f"src_{d['dimension']}_{i}", help="show source note",
+                    bc[0].button("↪", key=f"src_{d['dimension']}_{idx}", help="show source note",
                                  on_click=_focus_note, args=(f["note_id"], f["note_quote"]))
-                bc[1].button("✓", key=f"val_{d['dimension']}_{i}", help="valid issue",
+                bc[1].button("✓", key=f"val_{d['dimension']}_{idx}", help="valid issue",
                              on_click=_toggle_finding_label,
                              args=(case["case_id"], fkey, "valid", meta))
-                bc[2].button("✗", key=f"fa_{d['dimension']}_{i}", help="false alarm",
+                bc[2].button("✗", key=f"fa_{d['dimension']}_{idx}", help="false alarm",
                              on_click=_toggle_finding_label,
                              args=(case["case_id"], fkey, "false_alarm", meta))
+
+        fi = 0
+        seen_members = set()
+        for v in d.get("verdicts", []):
+            member = v.get("member")
+            seen_members.add(member)
+            if v.get("error"):
+                st.markdown(f"- <small>**{member}**: ⚠️ {v['error']}</small>", unsafe_allow_html=True)
+            else:
+                st.markdown(f"- <small>**{member}** ({v.get('score')}): {v.get('synopsis','')}</small>",
+                            unsafe_allow_html=True)
+            for f in issues_by_member.get(member, []):
+                _render_finding(f, fi)
+                fi += 1
+        # Defensive: surface any findings whose member had no verdict line.
+        for member, fs in issues_by_member.items():
+            if member in seen_members:
+                continue
+            st.markdown(f"- <small>**{member}**</small>", unsafe_allow_html=True)
+            for f in fs:
+                _render_finding(f, fi)
+                fi += 1
 
         # Per-dimension human adjudication (override just this dimension).
         with st.expander(f"✎ adjudicate · {d['dimension']}"):
