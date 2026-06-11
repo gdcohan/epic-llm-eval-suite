@@ -21,16 +21,35 @@ There are exactly **three** docs. Read them in this order at session start
 | `HANDOFF.md` | current state, key decisions, plan | any session that builds something, makes a decision, or changes the plan |
 | `README.md` | user-visible behavior + usage | a feature changes what a user sees or does |
 
-**Keeping it honest:**
+**Doc updates are part of the change, not an afterthought.** These are hard
+rules, not suggestions:
 
+- **A change is not done until its docs are done.** Treat "code compiles +
+  tests pass + owning docs updated" as the definition of done for every unit
+  of work. Doc edits ship in the **same commit** as the code they describe
+  (or the immediately following commit, same push — never "later").
+- **Write plan changes down the moment they're agreed.** When a discussion
+  with the user lands on a new plan, approach, or decision — even with zero
+  code written — update HANDOFF's *Plan* / *Key decisions* **in that same
+  turn**, before moving on. Conversation is the most perishable state in this
+  project; if it isn't in HANDOFF, the next session never knows it happened.
+- **Mandatory pre-push checklist.** Before the final push of any session,
+  answer each of these explicitly (not vibes — check the diff):
+  1. Does HANDOFF *Current state* still describe what's built? (`git diff
+     main --stat` is the prompt — anything user-visible or architectural in
+     there must be reflected.)
+  2. Did the *Plan* advance, change, or get items completed? Mark them.
+  3. Was any decision made in conversation this session? → *Key decisions*.
+  4. Did any command, workflow, or setup step change? → this file.
+  5. Did a new gotcha bite this session? → this file's gotcha list (a gotcha
+     that cost one session 10 minutes costs every future session 10 minutes
+     until written down).
+  6. Did user-visible behavior change? → README.
+  If the answer to all six is "no doc change needed," say so explicitly in
+  your summary to the user — silence is not a sweep.
 - **Code wins.** A doc that contradicts the code is wrong — fix the doc in the
-  same commit you notice it.
-- **End-of-session sweep** (before the final push): reread HANDOFF's *Current
-  state* and *Plan* against this session's diff and update them; ask whether
-  any command, gotcha, or user-visible behavior changed and touch the owning
-  doc. Doc updates ship in the same push as the code they describe.
-- **Decisions made in discussion** (not just code) go to HANDOFF's *Key
-  decisions* — they're the easiest thing to lose between sessions.
+  same commit you notice the contradiction, even if it's unrelated to your
+  task. Never work around a stale doc silently.
 - **Don't add a fourth doc** without merging or retiring one; the set must stay
   reviewable at session start. (`ROADMAP.md` was folded into HANDOFF's Plan
   section for exactly this reason.)
