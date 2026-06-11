@@ -130,7 +130,8 @@ is built to not depend on it (pasted-notes escape hatch everywhere).
 
 ## Current state
 
-**The web UI is primary** (June 2026 rebuild): `api.py` (FastAPI over the same
+**The web UI is primary** (June 2026 rebuild, named **GenAI Eval Harness**):
+`api.py` (FastAPI over the same
 service layer) + `web/` (React/Vite/TS/Tailwind), all five sections at parity
 with — and now beyond — the legacy Streamlit app. UI niceties added since the
 rebuild: browser-history routing (`/explorer/<case>` deep links; Back unwinds

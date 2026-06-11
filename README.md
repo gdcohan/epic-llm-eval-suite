@@ -131,9 +131,10 @@ relevant API key for substantive judgments.
 
 ## UI
 
-The primary UI is a FastAPI + React app (`api.py` + `web/`); the original
-Streamlit app (`app.py`) is kept as a legacy fallback. Both sit on the same
-service layer (`service.py`), so they stay in lockstep feature-wise.
+The primary UI is the **GenAI Eval Harness**, a FastAPI + React app (`api.py` +
+`web/`); the original Streamlit app (`app.py`) is kept as a legacy fallback.
+Both sit on the same service layer (`service.py`), so they stay in lockstep
+feature-wise.
 
 ```bash
 # one-time frontend build
@@ -174,8 +175,9 @@ case-level — robust to panel size — and appear on live runs.)
 and a two-column body (independently scrollable, with a draggable divider to resize them; the notes column starts
 collapsed and opens on demand or via any ↪ source link):
 - **col 1 — summary + judge synopsis**: the summary (with flagged spans
-  highlighted), then per-dimension score, **disagreement** (agreement badge +
-  each juror's score and one-line synopsis), and **structured, source-linked
+  highlighted), then collapsible per-dimension cards (start collapsed for a
+  high-level read: score, **disagreement** badge, issue counts), expanding to
+  each juror's score and one-line synopsis and **structured, source-linked
   findings** — "summary said *X*, note *N* says *Y*" with a **↪ source** button
   that opens the cited note and highlights the span. Each issue also carries a
   **harm badge** (clinical severity · category) so a dangerous error stands out
