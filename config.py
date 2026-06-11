@@ -19,8 +19,8 @@ DEFAULT_PERSONAS = [
     for name, temp, text in jury.DEFAULT_PERSONAS
 ]
 DEFAULT_MODELS = [
-    {"provider": "anthropic", "model": "claude-sonnet-4-6"},
-    {"provider": "gemini", "model": "gemini-2.5-pro"},
+    {"provider": "anthropic", "model": "claude-sonnet-4-6", "enabled": True},
+    {"provider": "gemini", "model": "gemini-2.5-pro", "enabled": True},
 ]
 
 
@@ -104,7 +104,8 @@ def all_models():
         for spec in env.split(","):
             parts = [p.strip() for p in spec.split(":")]
             if parts and parts[0]:
-                out.append({"provider": parts[0], "model": parts[1] if len(parts) > 1 else ""})
+                out.append({"provider": parts[0], "model": parts[1] if len(parts) > 1 else "",
+                            "enabled": True})
         if out:
             return out
     return [dict(m) for m in DEFAULT_MODELS]
@@ -157,8 +158,10 @@ def active_panel():
                             float(p.get("temperature", 0.2)), p.get("text", ""))
             for p in personas
         ]
+    models = [m for m in all_models() if m.get("enabled", True)] \
+        or [dict(m) for m in DEFAULT_MODELS]
     members = []
-    for m in all_models():
+    for m in models:
         for p in personas:
             label = f"{m['provider']}:{m['model']}"
             if p.get("name"):

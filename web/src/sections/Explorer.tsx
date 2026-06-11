@@ -117,6 +117,8 @@ export default function Explorer({
   const [sidebarOpen, setSidebarOpen] = useState(
     () => localStorage.getItem("explorer.sidebar") !== "collapsed",
   );
+  // notes column starts collapsed; a ↪ source click expands it
+  const [notesOpen, setNotesOpen] = useState(false);
 
   const toggleSidebar = () =>
     setSidebarOpen((open) => {
@@ -149,6 +151,7 @@ export default function Explorer({
     }
     setDetail(null);
     setFocus(null);
+    setNotesOpen(false);
     setNotice(null);
     api
       .get(`/api/cases/${encodeURIComponent(selectedCase)}`)
@@ -293,9 +296,9 @@ export default function Explorer({
             <Spinner label="loading case…" />
           )
         ) : (
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="flex gap-4">
             {/* col 1: summary + judge synopsis */}
-            <div className="max-h-[46rem] space-y-4 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+            <div className="max-h-[46rem] min-w-0 flex-1 space-y-4 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/60 p-4">
               <div>
                 <span className="text-base font-semibold text-slate-800">{detail.case.case_id}</span>
                 <span className="ml-2 text-xs text-slate-500">
@@ -334,7 +337,10 @@ export default function Explorer({
                   <VerdictView
                     verdict={verdict}
                     adjudication={detail.adjudication}
-                    onFocusNote={(noteId, quote) => setFocus({ noteId, quote })}
+                    onFocusNote={(noteId, quote) => {
+                      setFocus({ noteId, quote });
+                      setNotesOpen(true);
+                    }}
                     onToggleLabel={toggleLabel}
                     onAdjudicate={adjudicateDimension}
                   />
@@ -342,17 +348,41 @@ export default function Explorer({
               )}
             </div>
 
-            {/* col 2: reference notes */}
-            <div className="max-h-[46rem] overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/60 p-4">
-              <div className="mb-2 text-sm font-semibold text-slate-700">
-                Reference notes ({detail.case.source_note_ids?.length ?? 0})
+            {/* col 2: reference notes (collapsed by default; ↪ source expands) */}
+            {!notesOpen ? (
+              <button
+                type="button"
+                title="expand reference notes"
+                onClick={() => setNotesOpen(true)}
+                className="flex h-fit shrink-0 flex-col items-center gap-2 rounded-lg border border-slate-200 bg-white px-1.5 py-3 text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-700"
+              >
+                <span>«</span>
+                <span className="text-xs font-medium [writing-mode:vertical-rl]">
+                  Reference notes ({detail.case.source_note_ids?.length ?? 0})
+                </span>
+              </button>
+            ) : (
+              <div className="max-h-[46rem] min-w-0 flex-1 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-slate-700">
+                    Reference notes ({detail.case.source_note_ids?.length ?? 0})
+                  </span>
+                  <button
+                    type="button"
+                    title="collapse reference notes"
+                    onClick={() => setNotesOpen(false)}
+                    className="rounded px-1.5 py-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  >
+                    »
+                  </button>
+                </div>
+                <NotesList
+                  noteIds={detail.case.source_note_ids || []}
+                  notes={detail.notes}
+                  focus={focus}
+                />
               </div>
-              <NotesList
-                noteIds={detail.case.source_note_ids || []}
-                notes={detail.notes}
-                focus={focus}
-              />
-            </div>
+            )}
           </div>
         )}
       </div>

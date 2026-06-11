@@ -167,6 +167,7 @@ export interface PersonaConfig {
 export interface ModelConfig {
   provider: string;
   model: string;
+  enabled: boolean;
 }
 
 export interface JuryConfigData {

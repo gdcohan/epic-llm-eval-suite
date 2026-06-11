@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api";
-import type { DimensionConfig, JuryConfigData, PanelInfo, PersonaConfig } from "../types";
+import type { DimensionConfig, JuryConfigData, ModelConfig, PanelInfo, PersonaConfig } from "../types";
 import {
   Alert,
   Expander,
@@ -18,6 +18,24 @@ const withIds = <T,>(items: T[]) => items.map((it) => ({ ...it, _id: `cfg-${next
 
 type EditableDim = DimensionConfig & { _id: string };
 type EditablePersona = PersonaConfig & { _id: string };
+// models are edited as a raw "provider:model" spec per row
+type EditableModel = { _id: string; spec: string; enabled: boolean };
+
+const toModelRows = (models: ModelConfig[]): EditableModel[] =>
+  models.map((m) => ({
+    _id: `cfg-${nextId++}`,
+    spec: m.model ? `${m.provider}:${m.model}` : m.provider,
+    enabled: m.enabled ?? true,
+  }));
+
+const parseModelRows = (rows: EditableModel[]): ModelConfig[] =>
+  rows
+    .map((r) => ({ spec: r.spec.trim(), enabled: r.enabled }))
+    .filter((r) => r.spec)
+    .map((r) => {
+      const parts = r.spec.split(":").map((x) => x.trim());
+      return { provider: parts[0], model: parts[1] ?? "", enabled: r.enabled };
+    });
 
 function SectionShell({
   title,
@@ -50,7 +68,7 @@ export default function JuryConfig() {
   const [cfg, setCfg] = useState<JuryConfigData | null>(null);
   const [dims, setDims] = useState<EditableDim[]>([]);
   const [personas, setPersonas] = useState<EditablePersona[]>([]);
-  const [modelsText, setModelsText] = useState("");
+  const [models, setModels] = useState<EditableModel[]>([]);
   const [guidance, setGuidance] = useState("");
   const [contract, setContract] = useState("");
   const [panel, setPanel] = useState<PanelInfo | null>(null);
@@ -67,7 +85,7 @@ export default function JuryConfig() {
     setDims(withIds(c.dimensions));
     // older configs may predate the persona enabled flag — default it on
     setPersonas(withIds(c.personas.map((p: PersonaConfig) => ({ ...p, enabled: p.enabled ?? true }))));
-    setModelsText(c.models.map((m: { provider: string; model: string }) => `${m.provider}:${m.model}`).join("\n"));
+    setModels(toModelRows(c.models));
     setGuidance(c.source_guidance);
     setContract(c.output_contract);
     setPanel(p);
@@ -296,21 +314,53 @@ export default function JuryConfig() {
 
       <SectionShell
         title="Models"
-        caption="One provider:model per line (providers: anthropic, openai, gemini). Live mode only."
+        caption="provider:model (providers: anthropic, openai, gemini). Live mode only. Disabled models stay configured but are skipped when the panel is assembled."
       >
-        <textarea className={textareaClass} rows={4} value={modelsText} onChange={(e) => setModelsText(e.target.value)} />
+        <div className="space-y-2">
+          {models.map((m) => (
+            <div key={m._id} className="flex items-center gap-2">
+              <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600" title="enabled">
+                <input
+                  type="checkbox"
+                  checked={m.enabled}
+                  onChange={(e) =>
+                    setModels((ms) => ms.map((x) => (x._id === m._id ? { ...x, enabled: e.target.checked } : x)))
+                  }
+                />
+              </label>
+              <input
+                className={`${inputClass} !w-96 font-mono !text-[13px] ${m.enabled ? "" : "opacity-50"}`}
+                placeholder="provider:model"
+                value={m.spec}
+                onChange={(e) =>
+                  setModels((ms) => ms.map((x) => (x._id === m._id ? { ...x, spec: e.target.value } : x)))
+                }
+              />
+              {!m.enabled && <span className="text-xs text-slate-400">(disabled)</span>}
+              <button
+                type="button"
+                className={`${buttonClass} !px-2 !py-1 !text-xs text-red-600`}
+                onClick={() => setModels((ms) => ms.filter((x) => x._id !== m._id))}
+              >
+                remove
+              </button>
+            </div>
+          ))}
+        </div>
         <div className="mt-3 flex gap-2">
+          <button
+            type="button"
+            className={buttonClass}
+            onClick={() => setModels((ms) => [...ms, { _id: `cfg-${nextId++}`, spec: "", enabled: true }])}
+          >
+            ➕ add model
+          </button>
           <button
             type="button"
             className={primaryButtonClass}
             onClick={() =>
               act(async () => {
-                const models = modelsText
-                  .split("\n")
-                  .map((line) => line.split(":").map((x) => x.trim()))
-                  .filter((parts) => parts[0])
-                  .map((parts) => ({ provider: parts[0], model: parts[1] ?? "" }));
-                await api.put("/api/config/models", models);
+                await api.put("/api/config/models", parseModelRows(models));
               }, "Saved models.")
             }
           >
@@ -321,8 +371,8 @@ export default function JuryConfig() {
             className={buttonClass}
             onClick={() =>
               act(async () => {
-                const fresh: { provider: string; model: string }[] = await api.del("/api/config/models");
-                setModelsText(fresh.map((m) => `${m.provider}:${m.model}`).join("\n"));
+                const fresh: ModelConfig[] = await api.del("/api/config/models");
+                setModels(toModelRows(fresh));
               }, "Reset models to defaults.")
             }
           >

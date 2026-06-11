@@ -80,6 +80,7 @@ class PersonaConfig(BaseModel):
 class ModelConfig(BaseModel):
     provider: str
     model: str = ""
+    enabled: bool = True
 
 
 class SharedTextBody(BaseModel):
