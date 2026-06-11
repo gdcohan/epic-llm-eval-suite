@@ -74,6 +74,7 @@ class PersonaConfig(BaseModel):
     name: str
     temperature: float = 0.2
     text: str = ""
+    enabled: bool = True
 
 
 class ModelConfig(BaseModel):

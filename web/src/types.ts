@@ -161,6 +161,7 @@ export interface PersonaConfig {
   name: string;
   temperature: number;
   text: string;
+  enabled: boolean;
 }
 
 export interface ModelConfig {

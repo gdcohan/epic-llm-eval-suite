@@ -15,7 +15,7 @@ import jury
 CONFIG_PATH = os.path.join("data", "jury_config.json")
 
 DEFAULT_PERSONAS = [
-    {"name": name, "temperature": temp, "text": text}
+    {"name": name, "temperature": temp, "text": text, "enabled": True}
     for name, temp, text in jury.DEFAULT_PERSONAS
 ]
 DEFAULT_MODELS = [
@@ -146,8 +146,11 @@ def reset_output_contract():
 # ----------------------------------------------------------------- panel
 def active_panel():
     """The jury panel. Stub mode: one stub juror per persona (offline). Live:
-    the cross-product of models x personas (one juror per pairing)."""
-    personas = all_personas() or [{"name": "", "temperature": 0.2, "text": ""}]
+    the cross-product of models x personas (one juror per pairing). Disabled
+    personas are skipped (missing flag = enabled); with none enabled, fall
+    back to a single neutral juror rather than an empty panel."""
+    personas = [p for p in all_personas() if p.get("enabled", True)] \
+        or [{"name": "", "temperature": 0.2, "text": ""}]
     if os.getenv("JURY_MODE", "stub").lower() == "stub":
         return [
             jury.JuryMember(f"stub · {p.get('name') or 'neutral'}", "stub", "stub",

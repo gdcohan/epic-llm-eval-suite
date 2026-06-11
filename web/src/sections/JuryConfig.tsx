@@ -65,7 +65,8 @@ export default function JuryConfig() {
     const [c, p] = await Promise.all([api.get("/api/config"), api.get("/api/panel")]);
     setCfg(c);
     setDims(withIds(c.dimensions));
-    setPersonas(withIds(c.personas));
+    // older configs may predate the persona enabled flag — default it on
+    setPersonas(withIds(c.personas.map((p: PersonaConfig) => ({ ...p, enabled: p.enabled ?? true }))));
     setModelsText(c.models.map((m: { provider: string; model: string }) => `${m.provider}:${m.model}`).join("\n"));
     setGuidance(c.source_guidance);
     setContract(c.output_contract);
@@ -207,8 +208,20 @@ export default function JuryConfig() {
       >
         <div className="space-y-2">
           {personas.map((p) => (
-            <Expander key={p._id} title={`${p.name || "new persona"}  ·  temp ${p.temperature}`} defaultOpen={!p.name}>
+            <Expander
+              key={p._id}
+              title={`${p.name || "new persona"}  ·  temp ${p.temperature}${p.enabled ? "" : "  ·  (disabled)"}`}
+              defaultOpen={!p.name}
+            >
               <div className="space-y-2">
+                <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                  <input
+                    type="checkbox"
+                    checked={p.enabled}
+                    onChange={(e) => updatePersona(p._id, { enabled: e.target.checked })}
+                  />
+                  enabled
+                </label>
                 <Field label="name">
                   <input className={inputClass} value={p.name} onChange={(e) => updatePersona(p._id, { name: e.target.value })} />
                 </Field>
@@ -247,7 +260,10 @@ export default function JuryConfig() {
             type="button"
             className={buttonClass}
             onClick={() =>
-              setPersonas((ps) => [...ps, { _id: `cfg-${nextId++}`, name: "", temperature: 0.2, text: "" }])
+              setPersonas((ps) => [
+                ...ps,
+                { _id: `cfg-${nextId++}`, name: "", temperature: 0.2, text: "", enabled: true },
+              ])
             }
           >
             ➕ add persona
