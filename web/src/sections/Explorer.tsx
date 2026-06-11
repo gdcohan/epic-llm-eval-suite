@@ -12,7 +12,7 @@ import {
   primaryButtonClass,
   textareaClass,
 } from "../components/ui";
-import VerdictView, { type FocusNote } from "../components/VerdictView";
+import VerdictView, { type AuthoredDraft, type FocusNote } from "../components/VerdictView";
 import NotesList from "../components/NotesList";
 
 function NewSummaryForm({ onCreated }: { onCreated: (caseId: string) => void }) {
@@ -207,6 +207,27 @@ export default function Explorer({
     setDetail((d) => (d ? { ...d, adjudication: adj } : d));
   };
 
+  const authorFinding = async (dimension: string, draft: AuthoredDraft) => {
+    if (!selectedCase) return;
+    try {
+      const adj: Adjudication = await api.post(
+        `/api/cases/${encodeURIComponent(selectedCase)}/authored-finding`,
+        { dimension, ...draft, author: adjudicator },
+      );
+      setDetail((d) => (d ? { ...d, adjudication: adj } : d));
+    } catch (e) {
+      setNotice({ kind: "error", text: e instanceof Error ? e.message : String(e) });
+    }
+  };
+
+  const removeAuthored = async (findingId: string) => {
+    if (!selectedCase) return;
+    const adj: Adjudication = await api.del(
+      `/api/cases/${encodeURIComponent(selectedCase)}/authored-finding/${encodeURIComponent(findingId)}`,
+    );
+    setDetail((d) => (d ? { ...d, adjudication: adj } : d));
+  };
+
   const adjudicateDimension = async (dimension: string, score: number | null, rationale: string) => {
     if (!selectedCase) return;
     const adj: Adjudication = await api.post(
@@ -343,6 +364,8 @@ export default function Explorer({
                     }}
                     onToggleLabel={toggleLabel}
                     onAdjudicate={adjudicateDimension}
+                    onAuthorFinding={authorFinding}
+                    onRemoveAuthored={removeAuthored}
                   />
                 </>
               )}

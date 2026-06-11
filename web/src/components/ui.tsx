@@ -33,7 +33,11 @@ export function AgreementBadge({ agreement }: { agreement: string | null | undef
   return <span className="text-xs text-slate-500">{AGREEMENT_LABELS[agreement] ?? agreement}</span>;
 }
 
-export function HarmBadge({ finding }: { finding: Finding }) {
+export function HarmBadge({
+  finding,
+}: {
+  finding: Pick<Finding, "harm_severity" | "harm_category">;
+}) {
   const sev = (finding.harm_severity || "").trim().toLowerCase();
   if (!sev) return null;
   const label = finding.harm_category ? `${sev} · ${finding.harm_category}` : sev;

@@ -206,7 +206,16 @@ into the Explorer).
 **Calibrate** (#4 core) — finding-level calibration. In a verdict (Explorer),
 mark each jury finding **✓ valid / ✗ false alarm**; the Calibrate tab reports
 per-dimension **precision** (validated ÷ labeled) and drills into the false
-alarms — the tuning signal. Recall (issues the jury *missed*) is the next step.
+alarms — the tuning signal. Humans can also **✋ flag missed issues** the jury
+didn't catch (per dimension, with note quote + harm tags); these are stored as
+`authored_findings` in the adjudication and surface as a count in Calibrate —
+the denominator for future recall math (quantified recall is deferred).
+
+**Probes** — `python probes.py` (live mode) runs the omission-probe suite:
+variants of one faithful summary, each deleting exactly one clinically
+significant fact (`probes/omission_probes.json`), and reports which jurors
+caught each planted omission plus false omissions on the control. It's the
+regression suite for tuning the comprehensiveness judge prompt.
 
 ## Files
 

@@ -25,24 +25,25 @@ export default function Calibrate() {
         </p>
       </div>
 
-      {!stats.labeled_cases ? (
+      {!stats.labeled_cases && !stats.total_authored ? (
         <Alert kind="info">
           No labeled findings yet. In the Summary Explorer, run the jury on a case and mark each issue ✓
-          valid / ✗ false alarm.
+          valid / ✗ false alarm — or ✋ flag issues the jury missed.
         </Alert>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-4 gap-3">
             <KpiCard label="Labeled cases" value={stats.labeled_cases} />
             <KpiCard label="Labeled findings" value={stats.total_labeled} />
             <KpiCard label="Overall precision" value={stats.overall_precision ?? "—"} />
+            <KpiCard label="✋ Human-flagged missed" value={stats.total_authored} />
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
-                  {["dimension", "labeled", "validated", "false alarms", "precision"].map((h) => (
+                  {["dimension", "labeled", "validated", "false alarms", "precision", "✋ missed (human)"].map((h) => (
                     <th key={h} className="py-1.5 pr-3">
                       {h}
                     </th>
@@ -57,6 +58,7 @@ export default function Calibrate() {
                     <td className="py-1.5 pr-3">{v.validated}</td>
                     <td className="py-1.5 pr-3">{v.false_alarms}</td>
                     <td className="py-1.5 pr-3">{v.precision ?? "—"}</td>
+                    <td className="py-1.5 pr-3">{v.authored_missed || "—"}</td>
                   </tr>
                 ))}
               </tbody>

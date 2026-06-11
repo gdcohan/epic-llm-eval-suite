@@ -84,6 +84,20 @@ is built to not depend on it (pasted-notes escape hatch everywhere).
   first**; **recall** (authoring missed issues) is the agreed next step.
   **V1 labels per juror** (no span dedup — that's V2; we avoided fragile span
   matching).
+- **Comprehensiveness judge**: rewritten (June 2026) to be omission-only —
+  notes→summary direction, internal two-pass instruction, explicit "do NOT do
+  accuracy's job" clause (it was acting as a second accuracy judge). Escalation
+  path if probes show misses: emit the fact inventory as structured output
+  (needs a jury.py passthrough), or enable extended thinking for the Anthropic
+  juror. The Anthropic (no thinking) vs Gemini 2.5 Pro (thinks by default)
+  split on the panel is a natural A/B for whether the scratchpad matters.
+- **Human-flagged missed issues** (`authored_findings` in the adjudication,
+  separate from `finding_labels`): assertions about the case, not labels on
+  jury output — the future recall denominator. UI: "✋ flag missed issue" per
+  dimension in the Explorer. Quantified recall deliberately deferred.
+- **Omission probes** (`probes/` + `python probes.py`): planted single-fact
+  omission variants + term-matched caught/missed report per juror — the
+  regression suite for judge-prompt tuning. Run live; stub emits no findings.
 - **Harm:** V1 inline per-finding (severity rated *independently* of juror
   leniency). V2 = dedicated harm pass + likelihood axis (severity × likelihood) +
   per-summary risk roll-up + harm-weighted calibration.

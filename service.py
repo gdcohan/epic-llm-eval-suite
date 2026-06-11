@@ -195,15 +195,53 @@ def set_finding_label(case_id, key, label, meta):
     return adj
 
 
+def add_authored_finding(case_id, dimension, explanation, note_quote=None, note_id=None,
+                         harm_category=None, harm_severity=None, author=None):
+    """Record a human-authored finding the jury missed (e.g. an omission).
+    Kept separate from finding_labels: these are assertions about the case,
+    not labels on jury output -- the denominator for future recall math."""
+    explanation = (explanation or "").strip()
+    note_quote = (note_quote or "").strip()
+    if not explanation and not note_quote:
+        raise ValueError("A missed-issue flag needs an explanation or a note quote.")
+    adj = persistence.load_adjudication(case_id) or {"case_id": case_id, "dimensions": {}, "rationales": {}}
+    adj.setdefault("authored_findings", [])
+    adj["authored_findings"].append({
+        "id": uuid.uuid4().hex[:8],
+        "dimension": dimension,
+        "explanation": explanation,
+        "note_quote": note_quote or None,
+        "note_id": (note_id or "").strip() or None,
+        "harm_category": harm_category or None,
+        "harm_severity": harm_severity or None,
+        "author": (author or "").strip(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    adj["adjudicated_at"] = datetime.now(timezone.utc).isoformat()
+    persistence.save_adjudication(adj)
+    return adj
+
+
+def remove_authored_finding(case_id, finding_id):
+    adj = persistence.load_adjudication(case_id) or {"case_id": case_id, "dimensions": {}, "rationales": {}}
+    adj["authored_findings"] = [f for f in adj.get("authored_findings", []) if f.get("id") != finding_id]
+    adj["adjudicated_at"] = datetime.now(timezone.utc).isoformat()
+    persistence.save_adjudication(adj)
+    return adj
+
+
 def precision_stats():
     """Finding-level precision across all labeled cases: of the jury's flagged
     findings the human reviewed, how many were valid (vs false alarms)."""
     tp, fp = defaultdict(int), defaultdict(int)
+    authored_by_dim = defaultdict(int)
     false_alarms = []
     labeled_cases = 0
     for c in list_cases():
         adj = persistence.load_adjudication(c["case_id"])
         labels = (adj or {}).get("finding_labels") or {}
+        for f in (adj or {}).get("authored_findings") or []:
+            authored_by_dim[f.get("dimension") or "—"] += 1
         if not labels:
             continue
         labeled_cases += 1
@@ -215,16 +253,18 @@ def precision_stats():
                 fp[dim] += 1
                 false_alarms.append({"case": c["case_id"], **lbl})
     per_dim = {}
-    for d in sorted(set(list(tp) + list(fp))):
+    for d in sorted(set(list(tp) + list(fp) + list(authored_by_dim))):
         t, f = tp[d], fp[d]
         per_dim[d] = {"labeled": t + f, "validated": t, "false_alarms": f,
-                      "precision": round(t / (t + f), 2) if (t + f) else None}
+                      "precision": round(t / (t + f), 2) if (t + f) else None,
+                      "authored_missed": authored_by_dim[d]}
     total_t, total_f = sum(tp.values()), sum(fp.values())
     return {
         "per_dimension": per_dim,
         "labeled_cases": labeled_cases,
         "total_labeled": total_t + total_f,
         "overall_precision": round(total_t / (total_t + total_f), 2) if (total_t + total_f) else None,
+        "total_authored": sum(authored_by_dim.values()),
         "false_alarms": false_alarms,
     }
 

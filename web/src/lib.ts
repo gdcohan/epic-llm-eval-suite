@@ -13,6 +13,17 @@ export const HARM_COLORS: Record<string, string> = {
   low: "#6c757d",
 };
 
+// mirrors service.HARM_CATEGORIES
+export const HARM_CATEGORIES = [
+  "medication/dosing",
+  "allergy",
+  "diagnosis",
+  "test/result",
+  "follow-up/plan",
+  "demographic/admin",
+  "other",
+];
+
 export const AGREEMENT_LABELS: Record<string, string> = {
   unanimous: "✅ unanimous",
   minor: "🟡 minor split",

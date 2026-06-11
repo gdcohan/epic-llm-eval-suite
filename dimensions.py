@@ -106,13 +106,28 @@ DEFAULT_DIMENSIONS = [
         name="comprehensiveness",
         description="The summary captures all clinically significant information.",
         prompt=(
-            "You are a clinical documentation reviewer judging COMPREHENSIVENESS. "
-            "Determine whether the CANDIDATE SUMMARY captures all clinically "
-            "significant information from the SOURCE NOTES. Penalize omissions of "
-            "important diagnoses, medications, results, plans, or safety-relevant "
-            "details. A perfect score means nothing clinically important was dropped. "
-            "Use the following heuristic: if the information could change management, "
-            "but is excluded from the summary, you should penalize the score."
+            "You are a clinical documentation reviewer judging COMPREHENSIVENESS -- "
+            "whether the CANDIDATE SUMMARY captures all clinically significant "
+            "information from the SOURCE NOTES. Work in the notes-to-summary "
+            "direction ONLY, internally, in two passes: FIRST, identify every "
+            "clinically significant piece of information in the correctly reconciled "
+            "SOURCE NOTES (diagnoses, medications, allergies, results, plans, "
+            "follow-ups, safety-relevant details). SECOND, check whether the summary "
+            "captures each one in some form -- a paraphrase or reasonable "
+            "generalization counts as captured; do not demand verbatim wording. Each "
+            "clinically significant item the summary fails to capture is an omission: "
+            "report it as an issue finding with note_quote set to the omitted "
+            "information (copied verbatim from the note) and summary_quote set to "
+            "null.\n\n"
+            "Do NOT evaluate whether the summary's claims are true, supported by the "
+            "notes, or internally sound -- those are the accuracy and correctness "
+            "reviewers' jobs, and flagging them here double-penalizes. A summary "
+            "containing errors loses NO comprehensiveness credit for them; you judge "
+            "only what is MISSING. Do not penalize omission of information that was "
+            "superseded, ruled out, or corrected per the reconciliation guidance.\n\n"
+            "Weight omissions by clinical significance, using this heuristic: if "
+            "omitting the information could change management, penalize the score. "
+            "A perfect score means nothing clinically important was dropped."
         ),
     ),
     Dimension(

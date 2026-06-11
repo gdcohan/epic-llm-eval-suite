@@ -87,11 +87,24 @@ export interface FindingLabel {
   note_id?: string | null;
 }
 
+export interface AuthoredFinding {
+  id: string;
+  dimension: string;
+  explanation: string;
+  note_quote?: string | null;
+  note_id?: string | null;
+  harm_category?: string | null;
+  harm_severity?: string | null;
+  author?: string;
+  created_at?: string;
+}
+
 export interface Adjudication {
   case_id: string;
   dimensions: Record<string, number>;
   rationales: Record<string, string>;
   finding_labels?: Record<string, FindingLabel>;
+  authored_findings?: AuthoredFinding[];
   adjudicator?: string;
   adjudicated_at?: string;
 }
@@ -136,11 +149,18 @@ export interface OverviewStats {
 export interface PrecisionStats {
   per_dimension: Record<
     string,
-    { labeled: number; validated: number; false_alarms: number; precision: number | null }
+    {
+      labeled: number;
+      validated: number;
+      false_alarms: number;
+      precision: number | null;
+      authored_missed: number;
+    }
   >;
   labeled_cases: number;
   total_labeled: number;
   overall_precision: number | null;
+  total_authored: number;
   false_alarms: Array<{
     case: string;
     dimension?: string;

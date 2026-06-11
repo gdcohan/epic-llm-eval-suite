@@ -1,6 +1,6 @@
 import { useState } from "react";
-import type { Adjudication, DimensionResult, Finding, Verdict } from "../types";
-import { fmtScore, scoreColor } from "../lib";
+import type { Adjudication, AuthoredFinding, DimensionResult, Finding, Verdict } from "../types";
+import { HARM_CATEGORIES, fmtScore, scoreColor } from "../lib";
 import {
   AgreementBadge,
   Badge,
@@ -9,12 +9,22 @@ import {
   buttonClass,
   inputClass,
   primaryButtonClass,
+  textareaClass,
 } from "./ui";
 
 export type FocusNote = { noteId: string; quote: string } | null;
 
+export type AuthoredDraft = {
+  explanation: string;
+  note_quote: string;
+  note_id: string;
+  harm_category: string;
+  harm_severity: string;
+};
+
 type LabeledFinding = Finding & { key?: string };
 type ToggleLabel = (finding: LabeledFinding, dimension: string, label: "valid" | "false_alarm") => void;
+type AuthorFinding = (dimension: string, draft: AuthoredDraft) => void;
 
 function issueFindings(d: DimensionResult): LabeledFinding[] {
   return (d.findings || []).filter((f) => f.type === "issue");
@@ -91,6 +101,146 @@ function FindingRow({
   );
 }
 
+/** A human-flagged missed issue (e.g. an omission the jury didn't catch). */
+function AuthoredRow({
+  finding,
+  onFocusNote,
+  onRemove,
+}: {
+  finding: AuthoredFinding;
+  onFocusNote: (noteId: string, quote: string) => void;
+  onRemove?: (id: string) => void;
+}) {
+  return (
+    <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-white px-2.5 py-2">
+      <div className="min-w-0 flex-1 text-xs text-slate-700">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span>✋ {finding.explanation || "(no explanation)"}</span>
+          <Badge color="#1565c0">human-flagged</Badge>
+          <HarmBadge finding={finding} />
+        </div>
+        {finding.note_quote && (
+          <div className="mt-1 text-slate-600">
+            · note <code className="rounded bg-slate-100 px-1">{finding.note_id || "—"}</code>:{" "}
+            <i>“{finding.note_quote}”</i>
+          </div>
+        )}
+        <div className="mt-0.5 text-slate-400">[{finding.author || "human"}]</div>
+      </div>
+      <div className="flex shrink-0 gap-1">
+        {finding.note_id && finding.note_quote && (
+          <button
+            type="button"
+            title="show source note"
+            className={`${buttonClass} !px-2 !py-1 !text-xs`}
+            onClick={() => onFocusNote(finding.note_id!, finding.note_quote!)}
+          >
+            ↪
+          </button>
+        )}
+        {onRemove && (
+          <button
+            type="button"
+            title="remove this flag"
+            className={`${buttonClass} !px-2 !py-1 !text-xs text-red-600`}
+            onClick={() => onRemove(finding.id)}
+          >
+            ×
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const EMPTY_DRAFT: AuthoredDraft = {
+  explanation: "",
+  note_quote: "",
+  note_id: "",
+  harm_category: "",
+  harm_severity: "",
+};
+
+function AuthorFindingForm({
+  dimension,
+  onSave,
+}: {
+  dimension: string;
+  onSave: AuthorFinding;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<AuthoredDraft>(EMPTY_DRAFT);
+  const set = (patch: Partial<AuthoredDraft>) => setDraft((d) => ({ ...d, ...patch }));
+  return (
+    <div>
+      <button type="button" className="text-xs text-indigo-600 hover:underline" onClick={() => setOpen((v) => !v)}>
+        ✋ flag missed issue · {dimension}
+      </button>
+      {open && (
+        <div className="mt-2 space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
+          <input
+            className={inputClass}
+            placeholder="what did the jury miss? (e.g. summary omits the penicillin allergy)"
+            value={draft.explanation}
+            onChange={(e) => set({ explanation: e.target.value })}
+          />
+          <textarea
+            className={textareaClass}
+            rows={2}
+            placeholder="the omitted info, copied verbatim from the note (enables the ↪ source link)"
+            value={draft.note_quote}
+            onChange={(e) => set({ note_quote: e.target.value })}
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              className={`${inputClass} !w-44 !py-1`}
+              placeholder="note id (optional)"
+              value={draft.note_id}
+              onChange={(e) => set({ note_id: e.target.value })}
+            />
+            <select
+              className={`${inputClass} !w-auto !py-1`}
+              value={draft.harm_category}
+              onChange={(e) => set({ harm_category: e.target.value })}
+            >
+              <option value="">harm category…</option>
+              {HARM_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+            <select
+              className={`${inputClass} !w-auto !py-1`}
+              value={draft.harm_severity}
+              onChange={(e) => set({ harm_severity: e.target.value })}
+            >
+              <option value="">severity…</option>
+              {["low", "moderate", "severe"].map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className={`${primaryButtonClass} !px-2.5 !py-1 !text-xs`}
+              disabled={!draft.explanation.trim() && !draft.note_quote.trim()}
+              onClick={() => {
+                onSave(dimension, draft);
+                setDraft(EMPTY_DRAFT);
+                setOpen(false);
+              }}
+            >
+              Save flag
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AdjudicateForm({
   dimension,
   juryScore,
@@ -151,16 +301,21 @@ function DimensionCard({
   onFocusNote,
   onToggleLabel,
   onAdjudicate,
+  onAuthorFinding,
+  onRemoveAuthored,
 }: {
   d: DimensionResult;
   adjudication?: Adjudication | null;
   onFocusNote: (noteId: string, quote: string) => void;
   onToggleLabel?: ToggleLabel;
   onAdjudicate?: (dimension: string, score: number | null, rationale: string) => void;
+  onAuthorFinding?: AuthorFinding;
+  onRemoveAuthored?: (id: string) => void;
 }) {
   const [open, setOpen] = useState(true);
   const [issuesOpen, setIssuesOpen] = useState(false);
   const issues = issueFindings(d);
+  const authored = (adjudication?.authored_findings ?? []).filter((f) => f.dimension === d.dimension);
   const adjDims = adjudication?.dimensions ?? {};
   const adjRationales = adjudication?.rationales ?? {};
   const findingLabels = adjudication?.finding_labels ?? {};
@@ -179,12 +334,17 @@ function DimensionCard({
         <AgreementBadge agreement={d.agreement} />
         {adjudicated && <Badge color="#1565c0">✎ {adjDims[d.dimension]}</Badge>}
         <span className="min-w-2 flex-1" />
+        {authored.length > 0 && (
+          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+            ✋ {authored.length} human
+          </span>
+        )}
         {issues.length > 0 ? (
           <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
             ⚠ {issues.length} issue{issues.length === 1 ? "" : "s"}
           </span>
         ) : (
-          <span className="text-xs text-slate-400">no issues</span>
+          authored.length === 0 && <span className="text-xs text-slate-400">no issues</span>
         )}
       </button>
 
@@ -225,7 +385,7 @@ function DimensionCard({
           </div>
 
           {/* zone 2: flagged issues, visually set apart + collapsible on their own */}
-          {issues.length > 0 && (
+          {(issues.length > 0 || authored.length > 0) && (
             <div className="border-t border-amber-200 bg-amber-50/60">
               <button
                 type="button"
@@ -233,7 +393,10 @@ function DimensionCard({
                 className="flex w-full items-center gap-1.5 px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-amber-700 hover:bg-amber-100/60"
               >
                 <span>{issuesOpen ? "▾" : "▸"}</span>
-                <span>⚠ Flagged issues ({issues.length})</span>
+                <span>
+                  ⚠ Flagged issues ({issues.length}
+                  {authored.length > 0 ? ` jury · ${authored.length} human` : ""})
+                </span>
                 {onToggleLabel && issuesOpen && (
                   <span className="font-normal normal-case">— mark each ✓ valid / ✗ false alarm</span>
                 )}
@@ -250,22 +413,28 @@ function DimensionCard({
                       onToggleLabel={onToggleLabel}
                     />
                   ))}
+                  {authored.map((f) => (
+                    <AuthoredRow key={f.id} finding={f} onFocusNote={onFocusNote} onRemove={onRemoveAuthored} />
+                  ))}
                 </div>
               )}
             </div>
           )}
 
           {/* zone 3: human adjudication */}
-          {onAdjudicate && (
-            <div className="border-t border-slate-100 px-3 py-2">
-              <AdjudicateForm
-                key={`${d.dimension}-${adjDims[d.dimension] ?? "jury"}`}
-                dimension={d.dimension}
-                juryScore={d.mean_score}
-                current={adjDims[d.dimension]}
-                currentRationale={adjRationales[d.dimension]}
-                onSave={onAdjudicate}
-              />
+          {(onAdjudicate || onAuthorFinding) && (
+            <div className="flex flex-wrap items-start gap-x-5 gap-y-2 border-t border-slate-100 px-3 py-2">
+              {onAdjudicate && (
+                <AdjudicateForm
+                  key={`${d.dimension}-${adjDims[d.dimension] ?? "jury"}`}
+                  dimension={d.dimension}
+                  juryScore={d.mean_score}
+                  current={adjDims[d.dimension]}
+                  currentRationale={adjRationales[d.dimension]}
+                  onSave={onAdjudicate}
+                />
+              )}
+              {onAuthorFinding && <AuthorFindingForm dimension={d.dimension} onSave={onAuthorFinding} />}
             </div>
           )}
         </div>
@@ -283,12 +452,16 @@ export default function VerdictView({
   onFocusNote,
   onToggleLabel,
   onAdjudicate,
+  onAuthorFinding,
+  onRemoveAuthored,
 }: {
   verdict: Verdict;
   adjudication?: Adjudication | null;
   onFocusNote: (noteId: string, quote: string) => void;
   onToggleLabel?: ToggleLabel;
   onAdjudicate?: (dimension: string, score: number | null, rationale: string) => void;
+  onAuthorFinding?: AuthorFinding;
+  onRemoveAuthored?: (id: string) => void;
 }) {
   return (
     <div className="space-y-3">
@@ -303,6 +476,8 @@ export default function VerdictView({
           onFocusNote={onFocusNote}
           onToggleLabel={onToggleLabel}
           onAdjudicate={onAdjudicate}
+          onAuthorFinding={onAuthorFinding}
+          onRemoveAuthored={onRemoveAuthored}
         />
       ))}
     </div>

@@ -55,6 +55,16 @@ class FindingLabelBody(BaseModel):
     label: str | None = None  # 'valid' | 'false_alarm' | None to clear
 
 
+class AuthoredFindingBody(BaseModel):
+    dimension: str
+    explanation: str = ""
+    note_quote: str | None = None
+    note_id: str | None = None
+    harm_category: str | None = None
+    harm_severity: str | None = None
+    author: str = ""
+
+
 class DimensionAdjudicationBody(BaseModel):
     dimension: str
     score: int | None = None  # None clears the override
@@ -201,6 +211,23 @@ def set_finding_label(case_id: str, body: FindingLabelBody):
         "note_id": body.note_id,
     }
     return service.set_finding_label(case_id, key, body.label, meta)
+
+
+@app.post("/api/cases/{case_id}/authored-finding")
+def add_authored_finding(case_id: str, body: AuthoredFindingBody):
+    try:
+        return service.add_authored_finding(
+            case_id, body.dimension, body.explanation, note_quote=body.note_quote,
+            note_id=body.note_id, harm_category=body.harm_category,
+            harm_severity=body.harm_severity, author=body.author,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.delete("/api/cases/{case_id}/authored-finding/{finding_id}")
+def remove_authored_finding(case_id: str, finding_id: str):
+    return service.remove_authored_finding(case_id, finding_id)
 
 
 @app.post("/api/cases/{case_id}/adjudicate-dimension")
