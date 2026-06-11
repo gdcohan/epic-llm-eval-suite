@@ -520,7 +520,7 @@ function DimensionCard({
   onRemoveAuthored?: (id: string) => void;
   onPromote?: OnPromote;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [issuesOpen, setIssuesOpen] = useState(false);
   const issues = issueFindings(d);
   const authored = (adjudication?.authored_findings ?? []).filter((f) => f.dimension === d.dimension);
