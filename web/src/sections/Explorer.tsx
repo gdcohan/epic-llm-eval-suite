@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api";
 import type { Adjudication, CaseDetail, CaseMeta, Finding } from "../types";
 import { fmtScore, splitIds, splitPasted } from "../lib";
@@ -124,6 +124,33 @@ export default function Explorer({
   );
   // notes column starts collapsed; a ↪ source click expands it
   const [notesOpen, setNotesOpen] = useState(false);
+  // draggable split between the jury and notes columns (fraction for the left)
+  const [split, setSplit] = useState(() => {
+    const v = parseFloat(localStorage.getItem("explorer.split") || "");
+    return Number.isFinite(v) && v >= 0.3 && v <= 0.75 ? v : 0.6;
+  });
+  const [dragging, setDragging] = useState(false);
+  const splitRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!dragging) return;
+    const onMove = (e: MouseEvent) => {
+      const rect = splitRef.current?.getBoundingClientRect();
+      if (!rect || rect.width === 0) return;
+      setSplit(Math.min(0.75, Math.max(0.3, (e.clientX - rect.left) / rect.width)));
+    };
+    const onUp = () => setDragging(false);
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+    return () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+  }, [dragging]);
+
+  useEffect(() => {
+    if (!dragging) localStorage.setItem("explorer.split", String(split));
+  }, [dragging, split]);
 
   const toggleSidebar = () =>
     setSidebarOpen((open) => {
@@ -334,9 +361,12 @@ export default function Explorer({
             <Spinner label="loading case…" />
           )
         ) : (
-          <div className="flex gap-4">
+          <div ref={splitRef} className={`flex gap-2 ${dragging ? "select-none" : ""}`}>
             {/* col 1: summary + judge synopsis */}
-            <div className="max-h-[46rem] min-w-0 flex-1 space-y-4 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+            <div
+              className="max-h-[46rem] min-w-0 flex-1 space-y-4 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/60 p-4"
+              style={notesOpen ? { flex: "none", width: `${split * 100}%` } : undefined}
+            >
               <div>
                 <span className="text-base font-semibold text-slate-800">{detail.case.case_id}</span>
                 <span className="ml-2 text-xs text-slate-500">
@@ -403,6 +433,17 @@ export default function Explorer({
                 </span>
               </button>
             ) : (
+              <>
+                <div
+                  title="drag to resize"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    setDragging(true);
+                  }}
+                  className={`w-1.5 shrink-0 cursor-col-resize self-stretch rounded-full ${
+                    dragging ? "bg-indigo-500" : "bg-slate-200 hover:bg-indigo-300"
+                  }`}
+                />
               <div className="max-h-[46rem] min-w-0 flex-1 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/60 p-4">
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-sm font-semibold text-slate-700">
@@ -430,6 +471,7 @@ export default function Explorer({
                   }}
                 />
               </div>
+              </>
             )}
           </div>
         )}

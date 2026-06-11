@@ -171,7 +171,7 @@ match), and selecting a scorecard row does the same. (Harm aggregates are
 case-level — robust to panel size — and appear on live runs.)
 
 **Summary Explorer** has the ingested summaries in a collapsible left sidebar
-and a two-column body (independently scrollable; the notes column starts
+and a two-column body (independently scrollable, with a draggable divider to resize them; the notes column starts
 collapsed and opens on demand or via any ↪ source link):
 - **col 1 — summary + judge synopsis**: the summary (with flagged spans
   highlighted), then per-dimension score, **disagreement** (agreement badge +
