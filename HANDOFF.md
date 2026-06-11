@@ -131,7 +131,8 @@ been recorded yet.
 **Built:** fetch + extraction; multi-vendor jury + disagreement; structured
 source-linked findings; reconciliation framework; harm matrix V1; full web UI
 (Overview w/ harm, Explorer w/ adjudication + finding-labeling + ✋ authored
-missed issues, Jury Config, Live Judge, Calibrate precision + authored counts);
+missed issues incl. span-select flagging in reference notes, Jury Config,
+Live Judge, Calibrate precision + authored counts);
 5 demo cases; **omission-probe harness** (`probes.py`); **rewritten
 omission-only comprehensiveness judge**.
 

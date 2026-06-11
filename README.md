@@ -207,7 +207,9 @@ into the Explorer).
 mark each jury finding **✓ valid / ✗ false alarm**; the Calibrate tab reports
 per-dimension **precision** (validated ÷ labeled) and drills into the false
 alarms — the tuning signal. Humans can also **✋ flag missed issues** the jury
-didn't catch (per dimension, with note quote + harm tags); these are stored as
+didn't catch — via the per-dimension form, or by **selecting a span directly in
+a reference note** ("✋ missing from summary", which files it under
+comprehensiveness with the verbatim quote). These are stored as
 `authored_findings` in the adjudication and surface as a count in Calibrate —
 the denominator for future recall math (quantified recall is deferred).
 

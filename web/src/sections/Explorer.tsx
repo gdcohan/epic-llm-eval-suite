@@ -403,6 +403,13 @@ export default function Explorer({
                   noteIds={detail.case.source_note_ids || []}
                   notes={detail.notes}
                   focus={focus}
+                  onFlagMissing={async (draft) => {
+                    await authorFinding("comprehensiveness", draft);
+                    setNotice({
+                      kind: "success",
+                      text: "Flagged span as ✋ missing from summary (comprehensiveness).",
+                    });
+                  }}
                 />
               </div>
             )}
