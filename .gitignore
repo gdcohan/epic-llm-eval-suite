@@ -11,3 +11,4 @@ data/
 # Web UI build artifacts
 web/node_modules/
 web/dist/
+web/*.tsbuildinfo
