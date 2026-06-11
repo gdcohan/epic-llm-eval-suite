@@ -81,7 +81,7 @@ function HarmMatrix({
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="mb-3 text-sm font-medium text-slate-600">
-        Harm matrix — # cases with ≥1 issue by category × severity (click a cell to open the case)
+        Harm matrix — # cases with ≥1 issue by category × severity
       </div>
       {cats.length === 0 ? (
         <div className="text-sm text-slate-400">
@@ -233,17 +233,17 @@ export default function Overview({ openCase }: { openCase: (caseId: string) => v
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-3 text-sm font-medium text-slate-600">
-              Case scorecard (lower = redder; click a header to sort, a row to open it)
-            </div>
+            <div className="mb-3 text-sm font-medium text-slate-600">Case scorecard</div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full table-fixed text-sm">
                 <thead>
-                  <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr className="text-xs uppercase tracking-wide text-slate-500">
                     {columns.map((col) => (
                       <th
                         key={col}
-                        className="cursor-pointer select-none whitespace-nowrap py-1.5 pr-3 hover:text-slate-700"
+                        className={`cursor-pointer select-none whitespace-nowrap py-1.5 hover:text-slate-700 ${
+                          col === "case" ? "w-[16%] text-left" : "text-center"
+                        }`}
                         onClick={() => sortBy(col)}
                       >
                         {col}
@@ -264,7 +264,7 @@ export default function Overview({ openCase }: { openCase: (caseId: string) => v
                         if (scoreCols.has(col)) {
                           const num = typeof v === "number" ? v : null;
                           return (
-                            <td key={col} className="py-1.5 pr-3">
+                            <td key={col} className="py-1.5 text-center">
                               <span
                                 className="inline-block min-w-12 rounded px-2 py-0.5 text-center font-medium text-white"
                                 style={{ background: scoreColor(num) }}
@@ -277,7 +277,7 @@ export default function Overview({ openCase }: { openCase: (caseId: string) => v
                         if (col === "max_harm") {
                           const harm = typeof v === "string" ? v : "";
                           return (
-                            <td key={col} className="py-1.5 pr-3">
+                            <td key={col} className="py-1.5 text-center">
                               {harm ? (
                                 <span
                                   className="inline-block rounded px-2 py-0.5 text-center font-medium text-white"
@@ -292,7 +292,12 @@ export default function Overview({ openCase }: { openCase: (caseId: string) => v
                           );
                         }
                         return (
-                          <td key={col} className="whitespace-nowrap py-1.5 pr-3 text-slate-700">
+                          <td
+                            key={col}
+                            className={`truncate whitespace-nowrap py-1.5 text-slate-700 ${
+                              col === "case" ? "pr-2 text-left" : "text-center"
+                            }`}
+                          >
                             {v == null || v === "" ? <span className="text-slate-400">—</span> : String(v)}
                           </td>
                         );
