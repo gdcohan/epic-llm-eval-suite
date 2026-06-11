@@ -12,7 +12,12 @@ import {
   primaryButtonClass,
   textareaClass,
 } from "../components/ui";
-import VerdictView, { type AuthoredDraft, type FocusNote } from "../components/VerdictView";
+import VerdictView, {
+  type AuthoredDraft,
+  type ExemplarDraft,
+  type FocusNote,
+  type LabelPayload,
+} from "../components/VerdictView";
 import NotesList from "../components/NotesList";
 
 function NewSummaryForm({ onCreated }: { onCreated: (caseId: string) => void }) {
@@ -186,13 +191,12 @@ export default function Explorer({
     }
   };
 
-  const toggleLabel = async (
+  const labelFinding = async (
     finding: Finding & { key?: string },
     dimension: string,
-    label: "valid" | "false_alarm",
+    payload: LabelPayload,
   ) => {
     if (!selectedCase || !finding.key) return;
-    const current = detail?.adjudication?.finding_labels?.[finding.key]?.label;
     const adj: Adjudication = await api.post(
       `/api/cases/${encodeURIComponent(selectedCase)}/finding-label`,
       {
@@ -201,10 +205,23 @@ export default function Explorer({
         summary_quote: finding.summary_quote,
         note_quote: finding.note_quote,
         note_id: finding.note_id,
-        label: current === label ? null : label,
+        explanation: finding.explanation,
+        ...payload,
       },
     );
     setDetail((d) => (d ? { ...d, adjudication: adj } : d));
+  };
+
+  const promoteExemplar = async (draft: ExemplarDraft) => {
+    try {
+      await api.post("/api/exemplars", draft);
+      setNotice({
+        kind: "success",
+        text: `★ Promoted to exemplar (${draft.dimension}) — it now teaches the jury via the prompt. Manage in Jury Config.`,
+      });
+    } catch (e) {
+      setNotice({ kind: "error", text: e instanceof Error ? e.message : String(e) });
+    }
   };
 
   const authorFinding = async (dimension: string, draft: AuthoredDraft) => {
@@ -362,10 +379,11 @@ export default function Explorer({
                       setFocus({ noteId, quote });
                       setNotesOpen(true);
                     }}
-                    onToggleLabel={toggleLabel}
+                    onLabel={labelFinding}
                     onAdjudicate={adjudicateDimension}
                     onAuthorFinding={authorFinding}
                     onRemoveAuthored={removeAuthored}
+                    onPromote={promoteExemplar}
                   />
                 </>
               )}

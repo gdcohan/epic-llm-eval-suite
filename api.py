@@ -13,12 +13,14 @@ Jury mode follows the environment (JURY_MODE=stub default, or live + keys).
 
 import os
 
-from fastapi import FastAPI, HTTPException
+from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 import config
+import jury
+import rubric_advisor
 import service
 
 app = FastAPI(title="Jury Explorer API")
@@ -53,6 +55,23 @@ class FindingLabelBody(BaseModel):
     note_quote: str | None = None
     note_id: str | None = None
     label: str | None = None  # 'valid' | 'false_alarm' | None to clear
+    explanation: str | None = None  # the finding's explanation (advisor context)
+    reason: str | None = None  # rejection taxonomy (false alarms)
+    note: str | None = None  # free-text 'teach the jury'
+    corrected_harm_category: str | None = None
+    corrected_harm_severity: str | None = None
+
+
+class ExemplarBody(BaseModel):
+    dimension: str
+    kind: str  # 'valid' | 'false_alarm' | 'missed'
+    summary_quote: str | None = None
+    note_quote: str | None = None
+    explanation: str | None = None
+    reason: str | None = None
+    teaching_note: str | None = None
+    harm_category: str | None = None
+    harm_severity: str | None = None
 
 
 class AuthoredFindingBody(BaseModel):
@@ -201,7 +220,7 @@ def judge_adhoc(body: JudgeAdhocBody):
 
 # ------------------------------------------------------------- adjudication
 @app.post("/api/cases/{case_id}/finding-label")
-def set_finding_label(case_id: str, body: FindingLabelBody):
+def set_finding_label(case_id: str, body: FindingLabelBody, background_tasks: BackgroundTasks):
     key = service.finding_key(body.dimension, body.member, body.summary_quote, body.note_quote)
     meta = {
         "dimension": body.dimension,
@@ -210,19 +229,51 @@ def set_finding_label(case_id: str, body: FindingLabelBody):
         "note_quote": body.note_quote,
         "note_id": body.note_id,
     }
-    return service.set_finding_label(case_id, key, body.label, meta)
+    adj = service.set_finding_label(
+        case_id, key, body.label, meta, reason=body.reason, note=body.note,
+        corrected_harm_category=body.corrected_harm_category,
+        corrected_harm_severity=body.corrected_harm_severity,
+    )
+    # A rejection-with-why or a harm correction may reveal a rubric principle —
+    # let the advisor consider it (async, live mode only, never blocks).
+    corrected = body.corrected_harm_category or body.corrected_harm_severity
+    if body.label == "false_alarm" or (body.label == "valid" and corrected):
+        background_tasks.add_task(rubric_advisor.consider_example, {
+            "kind": "false_alarm" if body.label == "false_alarm" else "harm_correction",
+            "case_id": case_id,
+            "dimension": body.dimension,
+            "summary_quote": body.summary_quote,
+            "note_quote": body.note_quote,
+            "finding_explanation": body.explanation,
+            "reviewer_reason": body.reason,
+            "reviewer_note": body.note,
+            "original_harm_category": None,
+            "corrected_harm_category": body.corrected_harm_category,
+            "corrected_harm_severity": body.corrected_harm_severity,
+        })
+    return adj
 
 
 @app.post("/api/cases/{case_id}/authored-finding")
-def add_authored_finding(case_id: str, body: AuthoredFindingBody):
+def add_authored_finding(case_id: str, body: AuthoredFindingBody, background_tasks: BackgroundTasks):
     try:
-        return service.add_authored_finding(
+        adj = service.add_authored_finding(
             case_id, body.dimension, body.explanation, note_quote=body.note_quote,
             note_id=body.note_id, harm_category=body.harm_category,
             harm_severity=body.harm_severity, author=body.author,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    background_tasks.add_task(rubric_advisor.consider_example, {
+        "kind": "missed_issue",
+        "case_id": case_id,
+        "dimension": body.dimension,
+        "note_quote": body.note_quote,
+        "reviewer_note": body.explanation,
+        "harm_category": body.harm_category,
+        "harm_severity": body.harm_severity,
+    })
+    return adj
 
 
 @app.delete("/api/cases/{case_id}/authored-finding/{finding_id}")
@@ -246,7 +297,51 @@ def get_config():
         "models": config.all_models(),
         "source_guidance": config.active_source_guidance(),
         "output_contract": config.active_output_contract(),
+        "review_rubric": config.active_review_rubric(),
+        "exemplars": config.all_exemplars(),
+        "exemplar_cap": config.EXEMPLAR_CAP_PER_DIMENSION,
     }
+
+
+@app.put("/api/config/review-rubric")
+def save_review_rubric(body: SharedTextBody):
+    config.save_review_rubric(body.text)
+    return {"ok": True}
+
+
+@app.delete("/api/config/review-rubric")
+def reset_review_rubric():
+    config.reset_review_rubric()
+    return {"text": config.active_review_rubric()}
+
+
+# --------------------------------------------------------- rubric proposals
+@app.get("/api/rubric-proposals")
+def list_rubric_proposals():
+    return rubric_advisor.list_proposals()
+
+
+@app.post("/api/rubric-proposals/{proposal_id}/resolve")
+def resolve_rubric_proposal(proposal_id: str, body: dict):
+    try:
+        proposals = rubric_advisor.resolve_proposal(proposal_id, bool(body.get("accept")))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {"proposals": proposals, "review_rubric": config.active_review_rubric()}
+
+
+# ---------------------------------------------------------------- exemplars
+@app.post("/api/exemplars")
+def add_exemplar(body: ExemplarBody):
+    try:
+        return config.add_exemplar(body.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.delete("/api/exemplars/{exemplar_id}")
+def remove_exemplar(exemplar_id: str):
+    return config.remove_exemplar(exemplar_id)
 
 
 @app.put("/api/config/dimensions")
@@ -320,9 +415,9 @@ def prompt_preview(dimension: str, persona: str | None = None):
     if persona:
         p = next((p for p in config.all_personas() if (p.get("name") or "unnamed") == persona), None)
         persona_text = (p or {}).get("text", "")
-    contract = config.active_output_contract().replace("{scale}", str(d.scale))
-    system = "\n\n".join(
-        filter(None, [d.prompt, persona_text, config.active_source_guidance(), contract])
+    system = jury.assemble_system(
+        d, persona_text, config.active_source_guidance(), config.active_output_contract(),
+        review_rubric=config.active_review_rubric(), exemplars=config.all_exemplars(),
     )
     return {"system": system}
 

@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api";
-import type { DimensionConfig, JuryConfigData, ModelConfig, PanelInfo, PersonaConfig } from "../types";
+import type {
+  DimensionConfig,
+  Exemplar,
+  JuryConfigData,
+  ModelConfig,
+  PanelInfo,
+  PersonaConfig,
+  RubricProposal,
+} from "../types";
 import {
   Alert,
   Expander,
@@ -71,6 +79,10 @@ export default function JuryConfig({ onPanelChanged }: { onPanelChanged?: () => 
   const [models, setModels] = useState<EditableModel[]>([]);
   const [guidance, setGuidance] = useState("");
   const [contract, setContract] = useState("");
+  const [rubric, setRubric] = useState("");
+  const [proposals, setProposals] = useState<RubricProposal[]>([]);
+  const [exemplars, setExemplars] = useState<Exemplar[]>([]);
+  const [exemplarCap, setExemplarCap] = useState(5);
   const [panel, setPanel] = useState<PanelInfo | null>(null);
   const [notice, setNotice] = useState<Notice>(null);
 
@@ -88,7 +100,11 @@ export default function JuryConfig({ onPanelChanged }: { onPanelChanged?: () => 
     setModels(toModelRows(c.models));
     setGuidance(c.source_guidance);
     setContract(c.output_contract);
+    setRubric(c.review_rubric);
+    setExemplars(c.exemplars ?? []);
+    setExemplarCap(c.exemplar_cap ?? 5);
     setPanel(p);
+    api.get("/api/rubric-proposals").then(setProposals).catch(() => setProposals([]));
   }, []);
 
   useEffect(() => {
@@ -436,6 +452,156 @@ export default function JuryConfig({ onPanelChanged }: { onPanelChanged?: () => 
             ↺ reset
           </button>
         </div>
+      </SectionShell>
+
+      <SectionShell
+        title="Reviewer rubric"
+        caption="The reviewer's house policy, prepended to every juror prompt: what crosses the issue threshold (vs. phrasing differences and judgment calls) and how clinical harm is calibrated. Hand-edit it here; the rubric advisor also proposes updates below as you reject findings with reasons (live mode)."
+      >
+        <textarea className={textareaClass} rows={14} value={rubric} onChange={(e) => setRubric(e.target.value)} />
+        <div className="mt-3 flex gap-2">
+          <button
+            type="button"
+            className={primaryButtonClass}
+            onClick={() => act(() => api.put("/api/config/review-rubric", { text: rubric }), "Saved rubric.")}
+          >
+            💾 save
+          </button>
+          <button
+            type="button"
+            className={buttonClass}
+            onClick={() =>
+              act(async () => {
+                const res = await api.del("/api/config/review-rubric");
+                setRubric(res.text);
+              }, "Reset rubric to default.")
+            }
+          >
+            ↺ reset
+          </button>
+        </div>
+
+        {proposals.some((p) => p.status === "pending") && (
+          <div className="mt-4 space-y-3 border-t border-slate-100 pt-3">
+            <div className="text-sm font-semibold text-slate-700">
+              Proposed rubric updates — review each (nothing is auto-applied)
+            </div>
+            {proposals
+              .filter((p) => p.status === "pending")
+              .map((p) => (
+                <div key={p.id} className="space-y-2 rounded-lg border border-indigo-200 bg-indigo-50/40 p-3">
+                  <div className="text-sm font-medium text-slate-800">{p.change_summary}</div>
+                  <div className="text-xs text-slate-600">{p.rationale}</div>
+                  <div className="text-xs text-slate-400">
+                    from a {p.source?.kind?.replace("_", " ") || "flag"} on{" "}
+                    <code className="rounded bg-slate-100 px-1">{p.source?.case_id || "?"}</code> ·{" "}
+                    {p.source?.dimension}
+                  </div>
+                  <Expander title="view full revised rubric">
+                    <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-lg bg-slate-900 p-3 text-[11px] leading-relaxed text-slate-100">
+                      {p.revised_rubric}
+                    </pre>
+                  </Expander>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className={`${primaryButtonClass} !px-2.5 !py-1 !text-xs`}
+                      onClick={() =>
+                        act(async () => {
+                          const res = await api.post(`/api/rubric-proposals/${p.id}/resolve`, { accept: true });
+                          setProposals(res.proposals);
+                          setRubric(res.review_rubric);
+                        }, "Rubric updated (other pending proposals marked stale).")
+                      }
+                    >
+                      ✓ accept
+                    </button>
+                    <button
+                      type="button"
+                      className={`${buttonClass} !px-2.5 !py-1 !text-xs`}
+                      onClick={() =>
+                        act(async () => {
+                          const res = await api.post(`/api/rubric-proposals/${p.id}/resolve`, { accept: false });
+                          setProposals(res.proposals);
+                        }, "Proposal rejected — the advisor won't re-propose it.")
+                      }
+                    >
+                      ✗ reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+          </div>
+        )}
+        {proposals.length > 0 && !proposals.some((p) => p.status === "pending") && (
+          <div className="mt-3 text-xs text-slate-400">
+            No pending rubric proposals ({proposals.length} resolved). New ones appear when you reject
+            findings with reasons or correct harm ratings (live mode).
+          </div>
+        )}
+      </SectionShell>
+
+      <SectionShell
+        title="Adjudicated exemplars"
+        caption={`Worked examples embedded in juror prompts as binding precedents — promote them with ★ on labeled findings in the Explorer. Capped at ${exemplarCap} per dimension to keep prompts lean.`}
+      >
+        {exemplars.length === 0 ? (
+          <div className="text-sm text-slate-400">
+            None yet — label a finding ✓/✗ in the Summary Explorer, then hit ★ to promote it.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {exemplars.map((ex) => (
+              <div key={ex.id} className="flex items-start gap-2 rounded-lg border border-slate-200 p-2.5">
+                <div className="min-w-0 flex-1 text-xs text-slate-700">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="rounded bg-slate-100 px-1.5 py-0.5 font-medium">{ex.dimension}</span>
+                    <span
+                      className="rounded px-1.5 py-0.5 font-medium text-white"
+                      style={{
+                        background:
+                          ex.kind === "false_alarm" ? "#c62828" : ex.kind === "missed" ? "#1565c0" : "#2e7d32",
+                      }}
+                    >
+                      {ex.kind === "false_alarm" ? "not an issue" : ex.kind === "missed" ? "jury missed" : "confirmed issue"}
+                    </span>
+                    {ex.reason && <span className="text-slate-500">{ex.reason}</span>}
+                    {ex.harm_severity && (
+                      <span className="text-slate-500">
+                        harm: {ex.harm_severity}
+                        {ex.harm_category ? ` · ${ex.harm_category}` : ""}
+                      </span>
+                    )}
+                  </div>
+                  {ex.summary_quote && (
+                    <div className="mt-1 text-slate-600">
+                      · summary: <i>“{ex.summary_quote}”</i>
+                    </div>
+                  )}
+                  {ex.note_quote && (
+                    <div className="mt-0.5 text-slate-600">
+                      · note: <i>“{ex.note_quote}”</i>
+                    </div>
+                  )}
+                  {ex.explanation && <div className="mt-0.5 text-slate-500">{ex.explanation}</div>}
+                  {ex.teaching_note && <div className="mt-0.5 italic text-slate-500">✎ {ex.teaching_note}</div>}
+                </div>
+                <button
+                  type="button"
+                  className={`${buttonClass} !px-2 !py-1 !text-xs text-red-600`}
+                  onClick={() =>
+                    act(async () => {
+                      const remaining = await api.del(`/api/exemplars/${ex.id}`);
+                      setExemplars(remaining);
+                    }, "Exemplar removed.")
+                  }
+                >
+                  remove
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </SectionShell>
 
       <SectionShell title="Panel preview">

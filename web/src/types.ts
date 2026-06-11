@@ -85,6 +85,33 @@ export interface FindingLabel {
   summary_quote?: string | null;
   note_quote?: string | null;
   note_id?: string | null;
+  reason?: string;
+  note?: string;
+  corrected_harm_category?: string;
+  corrected_harm_severity?: string;
+}
+
+export interface Exemplar {
+  id: string;
+  dimension: string;
+  kind: "valid" | "false_alarm" | "missed";
+  summary_quote?: string | null;
+  note_quote?: string | null;
+  explanation?: string | null;
+  reason?: string | null;
+  teaching_note?: string | null;
+  harm_category?: string | null;
+  harm_severity?: string | null;
+}
+
+export interface RubricProposal {
+  id: string;
+  created_at: string;
+  status: "pending" | "accepted" | "rejected" | "stale";
+  change_summary: string;
+  rationale: string;
+  revised_rubric: string;
+  source?: { case_id?: string; dimension?: string; kind?: string };
 }
 
 export interface AuthoredFinding {
@@ -196,4 +223,7 @@ export interface JuryConfigData {
   models: ModelConfig[];
   source_guidance: string;
   output_contract: string;
+  review_rubric: string;
+  exemplars: Exemplar[];
+  exemplar_cap: number;
 }

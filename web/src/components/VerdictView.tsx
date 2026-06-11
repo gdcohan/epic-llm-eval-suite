@@ -1,6 +1,13 @@
 import { useState } from "react";
-import type { Adjudication, AuthoredFinding, DimensionResult, Finding, Verdict } from "../types";
-import { HARM_CATEGORIES, fmtScore, scoreColor } from "../lib";
+import type {
+  Adjudication,
+  AuthoredFinding,
+  DimensionResult,
+  Finding,
+  FindingLabel,
+  Verdict,
+} from "../types";
+import { HARM_CATEGORIES, REJECTION_REASONS, fmtScore, scoreColor } from "../lib";
 import {
   AgreementBadge,
   Badge,
@@ -22,9 +29,63 @@ export type AuthoredDraft = {
   harm_severity: string;
 };
 
+export type LabelPayload = {
+  label: "valid" | "false_alarm" | null;
+  reason?: string;
+  note?: string;
+  corrected_harm_category?: string;
+  corrected_harm_severity?: string;
+};
+
+export type ExemplarDraft = {
+  dimension: string;
+  kind: "valid" | "false_alarm" | "missed";
+  summary_quote?: string | null;
+  note_quote?: string | null;
+  explanation?: string | null;
+  reason?: string | null;
+  teaching_note?: string | null;
+  harm_category?: string | null;
+  harm_severity?: string | null;
+};
+
 type LabeledFinding = Finding & { key?: string };
-type ToggleLabel = (finding: LabeledFinding, dimension: string, label: "valid" | "false_alarm") => void;
+type OnLabel = (finding: LabeledFinding, dimension: string, payload: LabelPayload) => void;
+type OnPromote = (draft: ExemplarDraft) => void;
 type AuthorFinding = (dimension: string, draft: AuthoredDraft) => void;
+
+function HarmSelects({
+  category,
+  severity,
+  setCategory,
+  setSeverity,
+}: {
+  category: string;
+  severity: string;
+  setCategory: (v: string) => void;
+  setSeverity: (v: string) => void;
+}) {
+  return (
+    <>
+      <select className={`${inputClass} !w-auto !py-1 !text-xs`} value={category} onChange={(e) => setCategory(e.target.value)}>
+        <option value="">harm category…</option>
+        {HARM_CATEGORIES.map((c) => (
+          <option key={c} value={c}>
+            {c}
+          </option>
+        ))}
+      </select>
+      <select className={`${inputClass} !w-auto !py-1 !text-xs`} value={severity} onChange={(e) => setSeverity(e.target.value)}>
+        <option value="">severity…</option>
+        {["low", "moderate", "severe"].map((s) => (
+          <option key={s} value={s}>
+            {s}
+          </option>
+        ))}
+      </select>
+    </>
+  );
+}
 
 function issueFindings(d: DimensionResult): LabeledFinding[] {
   return (d.findings || []).filter((f) => f.type === "issue");
@@ -33,70 +94,194 @@ function issueFindings(d: DimensionResult): LabeledFinding[] {
 function FindingRow({
   finding,
   dimension,
-  label,
+  labelEntry,
   onFocusNote,
-  onToggleLabel,
+  onLabel,
+  onPromote,
 }: {
   finding: LabeledFinding;
   dimension: string;
-  label?: "valid" | "false_alarm";
+  labelEntry?: FindingLabel;
   onFocusNote: (noteId: string, quote: string) => void;
-  onToggleLabel?: ToggleLabel;
+  onLabel?: OnLabel;
+  onPromote?: OnPromote;
 }) {
+  const label = labelEntry?.label;
+  const [rejecting, setRejecting] = useState(false);
+  const [reason, setReason] = useState("");
+  const [teachNote, setTeachNote] = useState("");
+  const [editingHarm, setEditingHarm] = useState(false);
+  const [harmCat, setHarmCat] = useState(labelEntry?.corrected_harm_category ?? "");
+  const [harmSev, setHarmSev] = useState(labelEntry?.corrected_harm_severity ?? "");
+
+  const correctedHarm = labelEntry?.corrected_harm_severity || labelEntry?.corrected_harm_category;
+
   return (
-    <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-white px-2.5 py-2">
-      <div className="min-w-0 flex-1 text-xs text-slate-700">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span>⚠ {finding.explanation || "(no explanation)"}</span>
-          {label === "valid" && <Badge color="#2e7d32">✓ valid</Badge>}
-          {label === "false_alarm" && <Badge color="#c62828">✗ false alarm</Badge>}
-          <HarmBadge finding={finding} />
+    <div className="rounded-lg border border-amber-200 bg-white px-2.5 py-2">
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1 text-xs text-slate-700">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span>⚠ {finding.explanation || "(no explanation)"}</span>
+            {label === "valid" && <Badge color="#2e7d32">✓ valid</Badge>}
+            {label === "false_alarm" && (
+              <>
+                <Badge color="#c62828">✗ false alarm</Badge>
+                {labelEntry?.reason && <Badge color="#6c757d">{labelEntry.reason}</Badge>}
+              </>
+            )}
+            <HarmBadge finding={finding} />
+            {correctedHarm && (
+              <Badge color="#1565c0">
+                ✎ harm: {labelEntry?.corrected_harm_severity || "—"}
+                {labelEntry?.corrected_harm_category ? ` · ${labelEntry.corrected_harm_category}` : ""}
+              </Badge>
+            )}
+          </div>
+          {labelEntry?.note && <div className="mt-1 italic text-slate-500">✎ {labelEntry.note}</div>}
+          {finding.summary_quote && (
+            <div className="mt-1 text-slate-600">
+              · summary: <i>“{finding.summary_quote}”</i>
+            </div>
+          )}
+          {finding.note_quote && (
+            <div className="mt-0.5 text-slate-600">
+              · note <code className="rounded bg-slate-100 px-1">{finding.note_id}</code>:{" "}
+              <i>“{finding.note_quote}”</i>
+            </div>
+          )}
+          <div className="mt-0.5 text-slate-400">[{finding.member}]</div>
         </div>
-        {finding.summary_quote && (
-          <div className="mt-1 text-slate-600">
-            · summary: <i>“{finding.summary_quote}”</i>
-          </div>
-        )}
-        {finding.note_quote && (
-          <div className="mt-0.5 text-slate-600">
-            · note <code className="rounded bg-slate-100 px-1">{finding.note_id}</code>:{" "}
-            <i>“{finding.note_quote}”</i>
-          </div>
-        )}
-        <div className="mt-0.5 text-slate-400">[{finding.member}]</div>
+        <div className="flex shrink-0 gap-1">
+          {finding.note_id && finding.note_quote && (
+            <button
+              type="button"
+              title="show source note"
+              className={`${buttonClass} !px-2 !py-1 !text-xs`}
+              onClick={() => onFocusNote(finding.note_id!, finding.note_quote!)}
+            >
+              ↪
+            </button>
+          )}
+          {onLabel && (
+            <>
+              <button
+                type="button"
+                title="valid issue"
+                className={`${buttonClass} !px-2 !py-1 !text-xs ${label === "valid" ? "!border-green-500 !bg-green-50" : ""}`}
+                onClick={() => {
+                  setRejecting(false);
+                  onLabel(finding, dimension, { label: label === "valid" ? null : "valid" });
+                }}
+              >
+                ✓
+              </button>
+              <button
+                type="button"
+                title="false alarm (asks why)"
+                className={`${buttonClass} !px-2 !py-1 !text-xs ${label === "false_alarm" ? "!border-red-500 !bg-red-50" : ""}`}
+                onClick={() => {
+                  if (label === "false_alarm") onLabel(finding, dimension, { label: null });
+                  else setRejecting((v) => !v);
+                }}
+              >
+                ✗
+              </button>
+              {label === "valid" && (
+                <button
+                  type="button"
+                  title="correct the harm rating"
+                  className={`${buttonClass} !px-2 !py-1 !text-xs ${correctedHarm ? "!border-blue-400 !bg-blue-50" : ""}`}
+                  onClick={() => setEditingHarm((v) => !v)}
+                >
+                  ✎
+                </button>
+              )}
+              {label && onPromote && (
+                <button
+                  type="button"
+                  title="promote to exemplar (teaches the jury via the prompt)"
+                  className={`${buttonClass} !px-2 !py-1 !text-xs`}
+                  onClick={() =>
+                    onPromote({
+                      dimension,
+                      kind: label === "valid" ? "valid" : "false_alarm",
+                      summary_quote: finding.summary_quote,
+                      note_quote: finding.note_quote,
+                      explanation: finding.explanation,
+                      reason: labelEntry?.reason,
+                      teaching_note: labelEntry?.note,
+                      harm_category: labelEntry?.corrected_harm_category ?? finding.harm_category,
+                      harm_severity: labelEntry?.corrected_harm_severity ?? finding.harm_severity,
+                    })
+                  }
+                >
+                  ★
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
-      <div className="flex shrink-0 gap-1">
-        {finding.note_id && finding.note_quote && (
+
+      {rejecting && onLabel && (
+        <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
+          <select className={`${inputClass} !w-auto !py-1 !text-xs`} value={reason} onChange={(e) => setReason(e.target.value)}>
+            <option value="">why is this a false alarm…</option>
+            {REJECTION_REASONS.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+          <input
+            className={`${inputClass} !w-64 !py-1 !text-xs`}
+            placeholder="teach the jury (optional)"
+            value={teachNote}
+            onChange={(e) => setTeachNote(e.target.value)}
+          />
           <button
             type="button"
-            title="show source note"
-            className={`${buttonClass} !px-2 !py-1 !text-xs`}
-            onClick={() => onFocusNote(finding.note_id!, finding.note_quote!)}
+            className={`${primaryButtonClass} !px-2.5 !py-1 !text-xs`}
+            disabled={!reason}
+            onClick={() => {
+              onLabel(finding, dimension, { label: "false_alarm", reason, note: teachNote });
+              setRejecting(false);
+            }}
           >
-            ↪
+            Save ✗
           </button>
-        )}
-        {onToggleLabel && (
-          <>
-            <button
-              type="button"
-              title="valid issue"
-              className={`${buttonClass} !px-2 !py-1 !text-xs ${label === "valid" ? "!border-green-500 !bg-green-50" : ""}`}
-              onClick={() => onToggleLabel(finding, dimension, "valid")}
-            >
-              ✓
-            </button>
-            <button
-              type="button"
-              title="false alarm"
-              className={`${buttonClass} !px-2 !py-1 !text-xs ${label === "false_alarm" ? "!border-red-500 !bg-red-50" : ""}`}
-              onClick={() => onToggleLabel(finding, dimension, "false_alarm")}
-            >
-              ✗
-            </button>
-          </>
-        )}
-      </div>
+          <button type="button" className={`${buttonClass} !px-2 !py-1 !text-xs`} onClick={() => setRejecting(false)}>
+            cancel
+          </button>
+        </div>
+      )}
+
+      {editingHarm && onLabel && label === "valid" && (
+        <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
+          <span className="text-xs text-slate-600">
+            corrected harm (jury said {finding.harm_severity || "—"}
+            {finding.harm_category ? ` · ${finding.harm_category}` : ""})
+          </span>
+          <HarmSelects category={harmCat} severity={harmSev} setCategory={setHarmCat} setSeverity={setHarmSev} />
+          <button
+            type="button"
+            className={`${primaryButtonClass} !px-2.5 !py-1 !text-xs`}
+            onClick={() => {
+              onLabel(finding, dimension, {
+                label: "valid",
+                corrected_harm_category: harmCat,
+                corrected_harm_severity: harmSev,
+              });
+              setEditingHarm(false);
+            }}
+          >
+            Save
+          </button>
+          <button type="button" className={`${buttonClass} !px-2 !py-1 !text-xs`} onClick={() => setEditingHarm(false)}>
+            cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -106,10 +291,12 @@ function AuthoredRow({
   finding,
   onFocusNote,
   onRemove,
+  onPromote,
 }: {
   finding: AuthoredFinding;
   onFocusNote: (noteId: string, quote: string) => void;
   onRemove?: (id: string) => void;
+  onPromote?: OnPromote;
 }) {
   return (
     <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-white px-2.5 py-2">
@@ -136,6 +323,25 @@ function AuthoredRow({
             onClick={() => onFocusNote(finding.note_id!, finding.note_quote!)}
           >
             ↪
+          </button>
+        )}
+        {onPromote && (
+          <button
+            type="button"
+            title="promote to exemplar (teaches the jury via the prompt)"
+            className={`${buttonClass} !px-2 !py-1 !text-xs`}
+            onClick={() =>
+              onPromote({
+                dimension: finding.dimension,
+                kind: "missed",
+                note_quote: finding.note_quote,
+                explanation: finding.explanation,
+                harm_category: finding.harm_category,
+                harm_severity: finding.harm_severity,
+              })
+            }
+          >
+            ★
           </button>
         )}
         {onRemove && (
@@ -299,18 +505,20 @@ function DimensionCard({
   d,
   adjudication,
   onFocusNote,
-  onToggleLabel,
+  onLabel,
   onAdjudicate,
   onAuthorFinding,
   onRemoveAuthored,
+  onPromote,
 }: {
   d: DimensionResult;
   adjudication?: Adjudication | null;
   onFocusNote: (noteId: string, quote: string) => void;
-  onToggleLabel?: ToggleLabel;
+  onLabel?: OnLabel;
   onAdjudicate?: (dimension: string, score: number | null, rationale: string) => void;
   onAuthorFinding?: AuthorFinding;
   onRemoveAuthored?: (id: string) => void;
+  onPromote?: OnPromote;
 }) {
   const [open, setOpen] = useState(true);
   const [issuesOpen, setIssuesOpen] = useState(false);
@@ -397,23 +605,30 @@ function DimensionCard({
                   ⚠ Flagged issues ({issues.length}
                   {authored.length > 0 ? ` jury · ${authored.length} human` : ""})
                 </span>
-                {onToggleLabel && issuesOpen && (
+                {onLabel && issuesOpen && (
                   <span className="font-normal normal-case">— mark each ✓ valid / ✗ false alarm</span>
                 )}
               </button>
               {issuesOpen && (
                 <div className="space-y-2 px-4 pb-3">
                   {authored.map((f) => (
-                    <AuthoredRow key={f.id} finding={f} onFocusNote={onFocusNote} onRemove={onRemoveAuthored} />
+                    <AuthoredRow
+                      key={f.id}
+                      finding={f}
+                      onFocusNote={onFocusNote}
+                      onRemove={onRemoveAuthored}
+                      onPromote={onPromote}
+                    />
                   ))}
                   {issues.map((f, i) => (
                     <FindingRow
                       key={f.key ?? i}
                       finding={f}
                       dimension={d.dimension}
-                      label={f.key ? findingLabels[f.key]?.label : undefined}
+                      labelEntry={f.key ? findingLabels[f.key] : undefined}
                       onFocusNote={onFocusNote}
-                      onToggleLabel={onToggleLabel}
+                      onLabel={onLabel}
+                      onPromote={onPromote}
                     />
                   ))}
                 </div>
@@ -450,18 +665,20 @@ export default function VerdictView({
   verdict,
   adjudication,
   onFocusNote,
-  onToggleLabel,
+  onLabel,
   onAdjudicate,
   onAuthorFinding,
   onRemoveAuthored,
+  onPromote,
 }: {
   verdict: Verdict;
   adjudication?: Adjudication | null;
   onFocusNote: (noteId: string, quote: string) => void;
-  onToggleLabel?: ToggleLabel;
+  onLabel?: OnLabel;
   onAdjudicate?: (dimension: string, score: number | null, rationale: string) => void;
   onAuthorFinding?: AuthorFinding;
   onRemoveAuthored?: (id: string) => void;
+  onPromote?: OnPromote;
 }) {
   return (
     <div className="space-y-3">
@@ -474,10 +691,11 @@ export default function VerdictView({
           d={d}
           adjudication={adjudication}
           onFocusNote={onFocusNote}
-          onToggleLabel={onToggleLabel}
+          onLabel={onLabel}
           onAdjudicate={onAdjudicate}
           onAuthorFinding={onAuthorFinding}
           onRemoveAuthored={onRemoveAuthored}
+          onPromote={onPromote}
         />
       ))}
     </div>

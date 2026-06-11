@@ -101,6 +101,25 @@ is built to not depend on it (pasted-notes escape hatch everywhere).
 - **Omission probes** (`probes/` + `python probes.py`): planted single-fact
   omission variants + term-matched caught/missed report per juror — the
   regression suite for judge-prompt tuning. Run live; stub emits no findings.
+- **Reviewer internalization** (the jury should think like THE reviewer):
+  - *Rich flag capture*: a ✗ false-alarm label requires a reason from a fixed
+    taxonomy (phrasing/style · clinically equivalent · defensible judgment
+    call · true but trivial · misread the note · other) + optional free-text
+    "teach the jury"; a ✓ valid label can carry a harm-rating correction.
+    All stored on `finding_labels` entries.
+  - *Reviewer rubric*: a shared prompt block (`review_rubric` in config; code
+    default in `dimensions.py`) carrying the issue threshold ("an issue needs
+    a plausible harm pathway") + harm anchors. Severity is part of the issue
+    admission test, not a tag — that's the deliberate coupling of the two.
+  - *Rubric advisor* (`rubric_advisor.py`): per-flag async LLM pass (live
+    only, fail-silent, strong no_change bias) that proposes rubric edits to a
+    pending queue (`data/rubric_proposals.json`). NEVER auto-applied: human
+    accept/reject on Jury Config; accept stales other pendings; rejections
+    are remembered so they're not re-proposed.
+  - *Exemplars*: ★ on labeled/authored findings promotes them into juror
+    prompts as precedents (config `exemplars`, capped 5/dimension). Division
+    of labor: exemplars carry CASES, the rubric carries PRINCIPLES — the
+    advisor is explicitly forbidden from adding examples.
 - **Harm:** V1 inline per-finding (severity rated *independently* of juror
   leniency). V2 = dedicated harm pass + likelihood axis (severity × likelihood) +
   per-summary risk roll-up + harm-weighted calibration.
@@ -169,6 +188,20 @@ The agreed sequencing — get comprehensiveness good first, quantify recall late
    - *Observed recall* (gold): validated ÷ (validated + authored-missed) from
      `authored_findings` — biased upward (anchoring) but measures reality; the
      storage is already shaped for this (assertions, separate from labels).
+
+### Reviewer internalization (in flight)
+
+Built: rich flag capture (✗ reasons + teach-notes, ✓ harm corrections), the
+reviewer rubric + advisor proposal queue, ★ exemplar promotion (see Key
+decisions). Remaining from that discussion:
+
+- **Persona refocus** — with the rubric owning the threshold, strict/balanced
+  personas are redundant-to-harmful; replace defaults with focus-area lenses
+  (e.g. medication safety / diagnostics / care continuity) so panel diversity
+  buys union coverage, not score spread. Agreed direction, not yet done.
+- **Internalization metrics** — punted; folds into the recall conversation
+  (precision trend + harm-agreement / severity confusion matrix, with
+  promoted exemplars excluded from scoring).
 
 ### Mid-term
 

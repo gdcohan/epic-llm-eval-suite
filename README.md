@@ -198,10 +198,15 @@ renders real judgments.
 to `data/jury_config.json` and applied on the next run: **dimensions**,
 **personas**, and **models** can each be added, removed, edited, and
 **enabled/disabled without deleting** (the live panel = enabled models ×
-enabled personas), plus the shared **recency guidance** and **output contract**
-(editable, with reset). A preview shows the resulting juror count and
-calls-per-case, and the app header's juror list stays in sync with saves.
-**Show-the-prompt** previews the exact assembled juror prompt.
+enabled personas), plus the shared **recency guidance**, **output contract**,
+and the **reviewer rubric** — the house policy on what crosses the issue
+threshold and how harm is calibrated, prepended to every juror prompt. As you
+reject findings with reasons (live mode), a **rubric advisor** proposes
+generalizable rubric edits into a pending queue here — accept/reject, never
+auto-applied. An **adjudicated exemplars** section manages the ★-promoted
+worked examples embedded in prompts (capped per dimension). A preview shows
+the juror count and calls-per-case, and **Show-the-prompt** previews the exact
+assembled juror prompt (rubric + exemplars included).
 
 **Live Judge** — a scratchpad: paste or fetch notes, type a summary, and
 **Judge** it live; edit the summary and re-judge to watch the scores move
@@ -209,9 +214,11 @@ calls-per-case, and the app header's juror list stays in sync with saves.
 into the Explorer).
 
 **Calibrate** — finding-level calibration. In a verdict (Explorer),
-mark each jury finding **✓ valid / ✗ false alarm**; the Calibrate tab reports
-per-dimension **precision** (validated ÷ labeled) and drills into the false
-alarms — the tuning signal. Humans can also **✋ flag missed issues** the jury
+mark each jury finding **✓ valid / ✗ false alarm** — a ✗ asks *why* (a fixed
+reason taxonomy + an optional "teach the jury" note), and a ✓ lets you correct
+the finding's harm rating; **★** promotes an instructive labeled finding to a
+prompt exemplar. The Calibrate tab reports per-dimension **precision**
+(validated ÷ labeled) and drills into the false alarms — the tuning signal. Humans can also **✋ flag missed issues** the jury
 didn't catch — via the per-dimension form, or by **selecting a span directly in
 a reference note** ("✋ missing from summary", which files it under
 comprehensiveness with the verbatim quote). These are stored as

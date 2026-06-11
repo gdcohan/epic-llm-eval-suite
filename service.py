@@ -181,15 +181,28 @@ def finding_key(dimension, member, summary_quote, note_quote):
     return hashlib.sha1(raw.encode()).hexdigest()[:12]
 
 
-def set_finding_label(case_id, key, label, meta):
+def set_finding_label(case_id, key, label, meta, reason=None, note=None,
+                      corrected_harm_category=None, corrected_harm_severity=None):
     """Set/clear a human label on one jury finding. label: 'valid' | 'false_alarm'
-    | None (clear). meta carries dimension/spans/member for later metrics."""
+    | None (clear). meta carries dimension/spans/member for later metrics.
+    `reason` (rejection taxonomy) + `note` (free-text 'teach the jury') capture
+    the WHY of a false alarm; harm corrections capture the reviewer's severity
+    calibration on validated findings. All become rubric/exemplar feedstock."""
     adj = persistence.load_adjudication(case_id) or {"case_id": case_id, "dimensions": {}, "rationales": {}}
     adj.setdefault("finding_labels", {})
     if label is None:
         adj["finding_labels"].pop(key, None)
     else:
-        adj["finding_labels"][key] = {"label": label, **meta}
+        entry = {"label": label, **meta}
+        if (reason or "").strip():
+            entry["reason"] = reason.strip()
+        if (note or "").strip():
+            entry["note"] = note.strip()
+        if (corrected_harm_category or "").strip():
+            entry["corrected_harm_category"] = corrected_harm_category.strip()
+        if (corrected_harm_severity or "").strip():
+            entry["corrected_harm_severity"] = corrected_harm_severity.strip()
+        adj["finding_labels"][key] = entry
     adj["adjudicated_at"] = datetime.now(timezone.utc).isoformat()
     persistence.save_adjudication(adj)
     return adj
@@ -378,7 +391,9 @@ def judge_case(case, fetch_missing=None):
     verdict = run_jury(notes, cases.summary_text(case), case_id=case["case_id"],
                        dimensions=config.active_dimensions(), panel=config.active_panel(),
                        source_guidance=config.active_source_guidance(),
-                       output_contract=config.active_output_contract())
+                       output_contract=config.active_output_contract(),
+                       review_rubric=config.active_review_rubric(),
+                       exemplars=config.all_exemplars())
     persistence.save_verdict(verdict)
     return verdict, missing
 
@@ -405,5 +420,7 @@ def judge_adhoc(summary_text, note_ids=None, pasted_notes=None):
     verdict = run_jury(notes, summary_text,
                        dimensions=config.active_dimensions(), panel=config.active_panel(),
                        source_guidance=config.active_source_guidance(),
-                       output_contract=config.active_output_contract())
+                       output_contract=config.active_output_contract(),
+                       review_rubric=config.active_review_rubric(),
+                       exemplars=config.all_exemplars())
     return verdict, notes, missing

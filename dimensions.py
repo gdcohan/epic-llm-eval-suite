@@ -90,6 +90,31 @@ OUTPUT_CONTRACT = (
 )
 
 
+# The reviewer's house policy, prepended to every juror prompt. Hand-authored
+# (Jury Config → Reviewer rubric) and refined over time via accepted rubric
+# proposals; the skeleton below is a starting point for the reviewer's voice.
+DEFAULT_REVIEW_RUBRIC = (
+    "REVIEWER RUBRIC (house policy — when this conflicts with your general "
+    "instincts, the rubric wins):\n\n"
+    "Issue threshold:\n"
+    "- An ISSUE requires a plausible harm pathway: if the discrepancy could not "
+    "change management or mislead a clinical reader, it is not an issue.\n"
+    "- Differences in phrasing, ordering, or style that preserve clinical "
+    "meaning are NEVER issues.\n"
+    "- A defensible clinical judgment call — where reasonable clinicians could "
+    "read the notes differently — is not an issue; flag only clear departures.\n"
+    "- When unsure whether something crosses the threshold, lean toward NOT "
+    "flagging it; precision is valued over volume.\n\n"
+    "Harm anchors (calibrate harm_severity against these):\n"
+    "- severe: wrong or omitted allergy with a reaction; an order-of-magnitude "
+    "dosing error; a missed critical, actionable diagnosis.\n"
+    "- moderate: an omitted stable chronic problem or medication; an imprecise "
+    "but non-dangerous dose; a missed routine follow-up.\n"
+    "- low: cosmetic or administrative slips (e.g. a wrong visit date) that "
+    "would be caught without clinical impact."
+)
+
+
 DEFAULT_DIMENSIONS = [
     Dimension(
         name="accuracy",

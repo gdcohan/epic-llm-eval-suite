@@ -76,6 +76,8 @@ def run_probe_file(path):
             dimensions=dims, panel=panel,
             source_guidance=config.active_source_guidance(),
             output_contract=config.active_output_contract(),
+            review_rubric=config.active_review_rubric(),
+            exemplars=config.all_exemplars(),
         )
         d = verdict["dimensions"][0]
         issues = [f for f in d.get("findings", []) if f.get("type") == "issue"]

@@ -8,6 +8,7 @@ The live panel is the CROSS-PRODUCT of models x personas (one juror per pairing)
 
 import os
 import json
+import uuid
 
 import dimensions as dim_defaults
 import jury
@@ -142,6 +143,47 @@ def save_output_contract(text):
 
 def reset_output_contract():
     _reset_key("output_contract")
+
+
+def active_review_rubric():
+    return load_raw().get("review_rubric") or dim_defaults.DEFAULT_REVIEW_RUBRIC
+
+
+def save_review_rubric(text):
+    _save_key("review_rubric", text)
+
+
+def reset_review_rubric():
+    _reset_key("review_rubric")
+
+
+# ------------------------------------------------------------- exemplars
+EXEMPLAR_CAP_PER_DIMENSION = 5
+
+
+def all_exemplars():
+    return [dict(e) for e in load_raw().get("exemplars", [])]
+
+
+def add_exemplar(exemplar):
+    """Add a reviewer-promoted exemplar (a worked adjudication example that
+    gets embedded in juror prompts). Capped per dimension to keep prompts lean."""
+    exemplars = all_exemplars()
+    dim = exemplar.get("dimension") or ""
+    if sum(1 for e in exemplars if e.get("dimension") == dim) >= EXEMPLAR_CAP_PER_DIMENSION:
+        raise ValueError(
+            f"Exemplar cap reached for '{dim}' ({EXEMPLAR_CAP_PER_DIMENSION}). "
+            "Remove one in Jury Config before promoting another."
+        )
+    exemplar = {**exemplar, "id": exemplar.get("id") or uuid.uuid4().hex[:8]}
+    exemplars.append(exemplar)
+    _save_key("exemplars", exemplars)
+    return exemplar
+
+
+def remove_exemplar(exemplar_id):
+    _save_key("exemplars", [e for e in all_exemplars() if e.get("id") != exemplar_id])
+    return all_exemplars()
 
 
 # ----------------------------------------------------------------- panel

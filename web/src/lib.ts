@@ -24,6 +24,17 @@ export const HARM_CATEGORIES = [
   "other",
 ];
 
+// rejection-reason taxonomy for ✗ false-alarm labels (mirrored in the rubric
+// advisor's context — keep wording stable)
+export const REJECTION_REASONS = [
+  "phrasing/style",
+  "clinically equivalent",
+  "defensible judgment call",
+  "true but trivial",
+  "misread the note",
+  "other",
+];
+
 export const AGREEMENT_LABELS: Record<string, string> = {
   unanimous: "✅ unanimous",
   minor: "🟡 minor split",

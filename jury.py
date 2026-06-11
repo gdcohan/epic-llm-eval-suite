@@ -15,7 +15,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from llm_providers import get_provider
-from dimensions import DEFAULT_DIMENSIONS, OUTPUT_CONTRACT, SOURCE_GUIDANCE
+from dimensions import DEFAULT_DIMENSIONS, DEFAULT_REVIEW_RUBRIC, OUTPUT_CONTRACT, SOURCE_GUIDANCE
+
+EXEMPLARS_PER_DIMENSION = 5  # prompt-side cap, mirrored by config's add-time cap
 
 
 @dataclass(frozen=True)
@@ -98,12 +100,54 @@ def _aggregate_source(notes):
     return "\n\n".join(blocks)
 
 
-def _build_messages(dimension, source_text, candidate_summary, member, source_guidance, output_contract):
+def _format_exemplars(exemplars):
+    """Reviewer-promoted adjudication examples, rendered as prompt precedents."""
+    if not exemplars:
+        return ""
+    heads = {"false_alarm": "NOT AN ISSUE — the jury over-flagged this",
+             "valid": "CONFIRMED ISSUE",
+             "missed": "REAL ISSUE THE JURY MISSED"}
+    lines = ["REVIEWER-ADJUDICATED PRECEDENTS (apply these as binding policy "
+             "examples when judging):"]
+    for i, ex in enumerate(exemplars, 1):
+        parts = [f"{i}. [{heads.get(ex.get('kind'), 'EXAMPLE')}]"]
+        if ex.get("summary_quote"):
+            parts.append(f'summary said: "{ex["summary_quote"]}"')
+        if ex.get("note_quote"):
+            parts.append(f'note said: "{ex["note_quote"]}"')
+        if ex.get("explanation"):
+            parts.append(f"context: {ex['explanation']}")
+        if ex.get("reason"):
+            parts.append(f"reviewer's reason: {ex['reason']}")
+        if ex.get("teaching_note"):
+            parts.append(f"reviewer's guidance: {ex['teaching_note']}")
+        if ex.get("harm_severity"):
+            harm = ex["harm_severity"]
+            if ex.get("harm_category"):
+                harm += f" · {ex['harm_category']}"
+            parts.append(f"harm: {harm}")
+        lines.append(" — ".join(parts))
+    return "\n".join(lines)
+
+
+def assemble_system(dimension, persona_text, source_guidance, output_contract,
+                    review_rubric=None, exemplars=None):
+    """The exact system prompt one juror gets (also used by the UI preview,
+    so what you see is what runs)."""
     # .replace (not .format) so a user-edited contract with literal braces is safe.
     contract = output_contract.replace("{scale}", str(dimension.scale))
-    system = "\n\n".join(
-        filter(None, [dimension.prompt, member.persona, source_guidance, contract])
-    )
+    relevant = [e for e in (exemplars or [])
+                if e.get("dimension") == dimension.name][:EXEMPLARS_PER_DIMENSION]
+    return "\n\n".join(filter(None, [
+        dimension.prompt, persona_text, source_guidance,
+        review_rubric or "", _format_exemplars(relevant), contract,
+    ]))
+
+
+def _build_messages(dimension, source_text, candidate_summary, member,
+                    source_guidance, output_contract, review_rubric, exemplars):
+    system = assemble_system(dimension, member.persona, source_guidance,
+                             output_contract, review_rubric, exemplars)
     user = (
         "=== SOURCE NOTES (ground truth, oldest first) ===\n"
         f"{source_text}\n\n"
@@ -113,9 +157,10 @@ def _build_messages(dimension, source_text, candidate_summary, member, source_gu
     return system, user
 
 
-def _judge(dimension, source_text, candidate_summary, member, source_guidance, output_contract):
+def _judge(dimension, source_text, candidate_summary, member, source_guidance,
+           output_contract, review_rubric, exemplars):
     system, user = _build_messages(dimension, source_text, candidate_summary, member,
-                                   source_guidance, output_contract)
+                                   source_guidance, output_contract, review_rubric, exemplars)
     last_exc = None
     for attempt in range(2):  # one retry, only for malformed-JSON responses
         try:
@@ -172,7 +217,8 @@ def _collect_findings(verdicts):
 
 
 def run_jury(notes, candidate_summary, dimensions=None, panel=None, case_id=None,
-             source_guidance=None, output_contract=None):
+             source_guidance=None, output_contract=None, review_rubric=None,
+             exemplars=None):
     """Score a candidate summary against the TOTALITY of its source notes.
 
     `notes` may be a single note dict or a list of them. Returns a verdict dict.
@@ -186,11 +232,13 @@ def run_jury(notes, candidate_summary, dimensions=None, panel=None, case_id=None
     panel = panel or default_panel()
     source_guidance = SOURCE_GUIDANCE if source_guidance is None else source_guidance
     output_contract = OUTPUT_CONTRACT if output_contract is None else output_contract
+    review_rubric = DEFAULT_REVIEW_RUBRIC if review_rubric is None else review_rubric
     source_text = _aggregate_source(notes)
 
     dimension_results = []
     for dim in dimensions:
-        verdicts = [_judge(dim, source_text, candidate_summary, m, source_guidance, output_contract)
+        verdicts = [_judge(dim, source_text, candidate_summary, m, source_guidance,
+                           output_contract, review_rubric, exemplars)
                     for m in panel]
         stats = _stats([v.get("score") for v in verdicts])
         dimension_results.append(
