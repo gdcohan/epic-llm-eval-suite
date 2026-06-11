@@ -114,6 +114,15 @@ export default function Explorer({
   const [judging, setJudging] = useState(false);
   const [notice, setNotice] = useState<{ kind: "error" | "warning" | "success"; text: string } | null>(null);
   const [adjudicator, setAdjudicator] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(
+    () => localStorage.getItem("explorer.sidebar") !== "collapsed",
+  );
+
+  const toggleSidebar = () =>
+    setSidebarOpen((open) => {
+      localStorage.setItem("explorer.sidebar", open ? "collapsed" : "open");
+      return !open;
+    });
 
   const loadCases = useCallback(async () => {
     const list: CaseMeta[] = await api.get("/api/cases");
@@ -219,9 +228,32 @@ export default function Explorer({
 
   return (
     <div className="flex gap-5">
-      {/* sidebar: ingested summaries */}
+      {/* sidebar: ingested summaries (collapsible to give the columns room) */}
+      {!sidebarOpen ? (
+        <button
+          type="button"
+          title="expand case list"
+          onClick={toggleSidebar}
+          className="flex h-fit shrink-0 flex-col items-center gap-2 rounded-lg border border-slate-200 bg-white px-1.5 py-3 text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-700"
+        >
+          <span>»</span>
+          <span className="text-xs font-medium [writing-mode:vertical-rl]">
+            Cases ({casesList?.length ?? 0})
+          </span>
+        </button>
+      ) : (
       <aside className="w-64 shrink-0">
-        <div className="mb-2 text-sm font-semibold text-slate-700">Ingested summaries</div>
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-sm font-semibold text-slate-700">Ingested summaries</span>
+          <button
+            type="button"
+            title="collapse case list"
+            onClick={toggleSidebar}
+            className="rounded px-1.5 py-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          >
+            «
+          </button>
+        </div>
         {casesList === null ? (
           <Spinner />
         ) : casesList.length === 0 ? (
@@ -248,6 +280,7 @@ export default function Explorer({
           </div>
         )}
       </aside>
+      )}
 
       <div className="min-w-0 flex-1 space-y-4">
         <NewSummaryForm onCreated={onCreated} />
