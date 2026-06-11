@@ -64,7 +64,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-export default function JuryConfig() {
+export default function JuryConfig({ onPanelChanged }: { onPanelChanged?: () => void }) {
   const [cfg, setCfg] = useState<JuryConfigData | null>(null);
   const [dims, setDims] = useState<EditableDim[]>([]);
   const [personas, setPersonas] = useState<EditablePersona[]>([]);
@@ -95,10 +95,11 @@ export default function JuryConfig() {
     loadAll().catch((e) => setNotice({ kind: "error", text: String(e) }));
   }, [loadAll]);
 
-  const act = async (fn: () => Promise<void>, successText: string) => {
+  const act = async (fn: () => Promise<unknown>, successText: string) => {
     try {
       await fn();
       setPanel(await api.get("/api/panel"));
+      onPanelChanged?.(); // keep the app header's juror list in sync
       setNotice({ kind: "success", text: successText });
     } catch (e) {
       setNotice({ kind: "error", text: e instanceof Error ? e.message : String(e) });
@@ -144,7 +145,17 @@ export default function JuryConfig() {
                   <input
                     type="checkbox"
                     checked={d.enabled}
-                    onChange={(e) => updateDim(d._id, { enabled: e.target.checked })}
+                    onChange={(e) => {
+                      // toggles save immediately (text edits still need 💾 save)
+                      const updated = dims.map((x) =>
+                        x._id === d._id ? { ...x, enabled: e.target.checked } : x,
+                      );
+                      setDims(updated);
+                      act(
+                        () => api.put("/api/config/dimensions", updated.map(({ _id, ...q }) => q)),
+                        `Dimension '${d.name || "unnamed"}' ${e.target.checked ? "enabled" : "disabled"} — saved.`,
+                      );
+                    }}
                   />
                   enabled
                 </label>
@@ -236,7 +247,17 @@ export default function JuryConfig() {
                   <input
                     type="checkbox"
                     checked={p.enabled}
-                    onChange={(e) => updatePersona(p._id, { enabled: e.target.checked })}
+                    onChange={(e) => {
+                      // toggles save immediately (text edits still need 💾 save)
+                      const updated = personas.map((x) =>
+                        x._id === p._id ? { ...x, enabled: e.target.checked } : x,
+                      );
+                      setPersonas(updated);
+                      act(
+                        () => api.put("/api/config/personas", updated.map(({ _id, ...q }) => q)),
+                        `Persona '${p.name || "unnamed"}' ${e.target.checked ? "enabled" : "disabled"} — saved.`,
+                      );
+                    }}
                   />
                   enabled
                 </label>
@@ -323,9 +344,17 @@ export default function JuryConfig() {
                 <input
                   type="checkbox"
                   checked={m.enabled}
-                  onChange={(e) =>
-                    setModels((ms) => ms.map((x) => (x._id === m._id ? { ...x, enabled: e.target.checked } : x)))
-                  }
+                  onChange={(e) => {
+                    // toggles save immediately (spec edits still need 💾 save)
+                    const updated = models.map((x) =>
+                      x._id === m._id ? { ...x, enabled: e.target.checked } : x,
+                    );
+                    setModels(updated);
+                    act(
+                      () => api.put("/api/config/models", parseModelRows(updated)),
+                      `Model '${m.spec || "unnamed"}' ${e.target.checked ? "enabled" : "disabled"} — saved.`,
+                    );
+                  }}
                 />
               </label>
               <input

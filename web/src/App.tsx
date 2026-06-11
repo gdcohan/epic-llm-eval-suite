@@ -44,8 +44,12 @@ export default function App() {
   // remember the last viewed case so re-entering the Explorer tab restores it
   const lastCase = useRef<string | null>(route.caseId);
 
-  useEffect(() => {
+  const refreshPanel = () => {
     api.get("/api/panel").then(setPanel).catch(() => setPanel(null));
+  };
+
+  useEffect(() => {
+    refreshPanel();
     // normalize unknown initial paths (e.g. /nonsense) without adding an entry
     history.replaceState(null, "", routePath(parseRoute(window.location.pathname)));
     const onPop = () => setRoute(parseRoute(window.location.pathname));
@@ -87,8 +91,7 @@ export default function App() {
           <h1 className="text-lg font-bold tracking-tight text-slate-900">Jury Explorer</h1>
           {panel && (
             <span className="text-xs text-slate-500">
-              {live ? "🟢 live" : "🟡 stub"} ·{" "}
-              {live ? panel.members.join(", ") : "offline stub panel"}
+              {live ? "🟢 live" : "🟡 stub"} · {panel.panel.join(", ")}
             </span>
           )}
           {panel && !live && (
@@ -121,7 +124,7 @@ export default function App() {
         {route.section === "Summary Explorer" && (
           <Explorer selectedCase={route.caseId} setSelectedCase={setSelectedCase} />
         )}
-        {route.section === "Jury Config" && <JuryConfig />}
+        {route.section === "Jury Config" && <JuryConfig onPanelChanged={refreshPanel} />}
         {route.section === "Live Judge" && <LiveJudge openCase={openCase} />}
         {route.section === "Calibrate" && <Calibrate />}
       </main>
