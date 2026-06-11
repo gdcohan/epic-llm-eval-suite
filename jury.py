@@ -116,20 +116,26 @@ def _build_messages(dimension, source_text, candidate_summary, member, source_gu
 def _judge(dimension, source_text, candidate_summary, member, source_guidance, output_contract):
     system, user = _build_messages(dimension, source_text, candidate_summary, member,
                                    source_guidance, output_contract)
-    try:
-        result = get_provider(member.provider).complete_json(
-            system, user, member.model, member.temperature
-        )
-        return {
-            "member": member.name,
-            "provider": member.provider,
-            "model": member.model,
-            "score": result.get("score"),
-            "synopsis": result.get("synopsis") or result.get("rationale"),
-            "findings": result.get("findings", []),
-        }
-    except Exception as exc:
-        return {"member": member.name, "provider": member.provider, "error": str(exc), "score": None}
+    last_exc = None
+    for attempt in range(2):  # one retry, only for malformed-JSON responses
+        try:
+            result = get_provider(member.provider).complete_json(
+                system, user, member.model, member.temperature
+            )
+            return {
+                "member": member.name,
+                "provider": member.provider,
+                "model": member.model,
+                "score": result.get("score"),
+                "synopsis": result.get("synopsis") or result.get("rationale"),
+                "findings": result.get("findings", []),
+            }
+        except json.JSONDecodeError as exc:
+            last_exc = exc  # the model emitted unparseable JSON; ask it again once
+        except Exception as exc:
+            return {"member": member.name, "provider": member.provider, "error": str(exc), "score": None}
+    return {"member": member.name, "provider": member.provider,
+            "error": f"unparseable JSON after retry: {last_exc}", "score": None}
 
 
 def _mean(values):

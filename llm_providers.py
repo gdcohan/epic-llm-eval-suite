@@ -49,13 +49,21 @@ class AnthropicProvider(LLMProvider):
         self.client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
     def complete_json(self, system, user, model, temperature):
+        # Generous ceiling: a juror citing many verbatim quotes can run long,
+        # and a truncated response is unparseable JSON. Cost is per token
+        # actually generated, so the high cap is free on normal responses.
         resp = self.client.messages.create(
             model=model,
-            max_tokens=1500,
+            max_tokens=8000,
             temperature=temperature,
             system=system + "\n\nRespond with ONLY a single valid JSON object.",
             messages=[{"role": "user", "content": user}],
         )
+        if getattr(resp, "stop_reason", None) == "max_tokens":
+            raise ValueError(
+                "Juror response truncated at max_tokens (8000) — the verdict JSON is "
+                "incomplete. Consider fewer/shorter findings via the output contract."
+            )
         text = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
         return _loads_lenient(text)
 
