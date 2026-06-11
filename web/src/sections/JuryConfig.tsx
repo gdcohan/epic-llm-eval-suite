@@ -18,6 +18,7 @@ import {
   primaryButtonClass,
   textareaClass,
 } from "../components/ui";
+import { COLORS } from "../lib";
 
 type Notice = { kind: "error" | "success"; text: string } | null;
 
@@ -560,7 +561,7 @@ export default function JuryConfig({ onPanelChanged }: { onPanelChanged?: () => 
                       className="rounded px-1.5 py-0.5 font-medium text-white"
                       style={{
                         background:
-                          ex.kind === "false_alarm" ? "#c62828" : ex.kind === "missed" ? "#1565c0" : "#2e7d32",
+                          ex.kind === "false_alarm" ? COLORS.bad : ex.kind === "missed" ? COLORS.info : COLORS.good,
                       }}
                     >
                       {ex.kind === "false_alarm" ? "not an issue" : ex.kind === "missed" ? "jury missed" : "confirmed issue"}

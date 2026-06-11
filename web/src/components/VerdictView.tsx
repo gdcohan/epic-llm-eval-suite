@@ -7,7 +7,7 @@ import type {
   FindingLabel,
   Verdict,
 } from "../types";
-import { HARM_CATEGORIES, REJECTION_REASONS, fmtScore, scoreColor } from "../lib";
+import { COLORS, HARM_CATEGORIES, REJECTION_REASONS, fmtScore, scoreColor } from "../lib";
 import {
   AgreementBadge,
   Badge,
@@ -122,16 +122,16 @@ function FindingRow({
         <div className="min-w-0 flex-1 text-xs text-slate-700">
           <div className="flex flex-wrap items-center gap-1.5">
             <span>⚠ {finding.explanation || "(no explanation)"}</span>
-            {label === "valid" && <Badge color="#2e7d32">✓ valid</Badge>}
+            {label === "valid" && <Badge color={COLORS.good}>✓ valid</Badge>}
             {label === "false_alarm" && (
               <>
-                <Badge color="#c62828">✗ false alarm</Badge>
-                {labelEntry?.reason && <Badge color="#6c757d">{labelEntry.reason}</Badge>}
+                <Badge color={COLORS.bad}>✗ false alarm</Badge>
+                {labelEntry?.reason && <Badge color={COLORS.muted}>{labelEntry.reason}</Badge>}
               </>
             )}
             <HarmBadge finding={finding} />
             {correctedHarm && (
-              <Badge color="#1565c0">
+              <Badge color={COLORS.info}>
                 ✎ harm: {labelEntry?.corrected_harm_severity || "—"}
                 {labelEntry?.corrected_harm_category ? ` · ${labelEntry.corrected_harm_category}` : ""}
               </Badge>
@@ -303,7 +303,7 @@ function AuthoredRow({
       <div className="min-w-0 flex-1 text-xs text-slate-700">
         <div className="flex flex-wrap items-center gap-1.5">
           <span>✋ {finding.explanation || "(no explanation)"}</span>
-          <Badge color="#1565c0">human-flagged</Badge>
+          <Badge color={COLORS.info}>human-flagged</Badge>
           <HarmBadge finding={finding} />
         </div>
         {finding.note_quote && (
@@ -540,7 +540,7 @@ function DimensionCard({
         <span className="font-semibold text-slate-800">{d.dimension}</span>
         <ScoreBadge score={d.mean_score} scale={d.scale} />
         <AgreementBadge agreement={d.agreement} />
-        {adjudicated && <Badge color="#1565c0">✎ {adjDims[d.dimension]}</Badge>}
+        {adjudicated && <Badge color={COLORS.info}>✎ {adjDims[d.dimension]}</Badge>}
         <span className="min-w-2 flex-1" />
         {authored.length > 0 && (
           <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
@@ -565,7 +565,7 @@ function DimensionCard({
             </div>
             {adjudicated && (
               <div className="mb-2.5 flex flex-wrap items-center gap-2 text-sm text-slate-500">
-                <Badge color="#1565c0">✎ adjudicated {adjDims[d.dimension]}</Badge>
+                <Badge color={COLORS.info}>✎ adjudicated {adjDims[d.dimension]}</Badge>
                 <span>(jury {fmtScore(d.mean_score)})</span>
                 {adjRationales[d.dimension] && <span>✎ {adjRationales[d.dimension]}</span>}
               </div>
@@ -575,7 +575,7 @@ function DimensionCard({
                 <li key={i} className="flex items-start gap-2.5">
                   <span
                     className="mt-0.5 inline-block w-9 shrink-0 rounded px-1 py-0.5 text-center text-xs font-semibold text-white"
-                    style={{ background: v.error ? "#9e9e9e" : scoreColor(v.score ?? null) }}
+                    style={{ background: v.error ? COLORS.muted : scoreColor(v.score ?? null) }}
                   >
                     {v.error ? "—" : fmtScore(v.score)}
                   </span>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { scoreColor, HARM_COLORS, AGREEMENT_LABELS, fmtScore } from "../lib";
+import { scoreColor, COLORS, HARM_COLORS, AGREEMENT_LABELS, fmtScore } from "../lib";
 import type { Finding } from "../types";
 
 export function Badge({ color, children }: { color: string; children: ReactNode }) {
@@ -41,7 +41,7 @@ export function HarmBadge({
   const sev = (finding.harm_severity || "").trim().toLowerCase();
   if (!sev) return null;
   const label = finding.harm_category ? `${sev} · ${finding.harm_category}` : sev;
-  return <Badge color={HARM_COLORS[sev] ?? "#6c757d"}>{label}</Badge>;
+  return <Badge color={HARM_COLORS[sev] ?? COLORS.muted}>{label}</Badge>;
 }
 
 /** Merge-highlight verbatim quotes inside text (mirrors the Streamlit _highlight). */

@@ -1,16 +1,25 @@
+// Muted clinical palette (deliberately not stoplight-saturated).
+export const COLORS = {
+  good: "#4a7c6f", // viridian
+  mid: "#c0913d", // ochre
+  bad: "#b0564c", // terracotta
+  info: "#4a6fa5", // steel blue — human actions (adjudications, flags)
+  muted: "#8b95a3", // gray — null / low
+};
+
 /** Score → traffic-light color (same thresholds as the Streamlit app). */
 export function scoreColor(score: number | null | undefined, scaleMax = 5): string {
-  if (score === null || score === undefined || Number.isNaN(score)) return "#9e9e9e";
+  if (score === null || score === undefined || Number.isNaN(score)) return COLORS.muted;
   const frac = score / scaleMax;
-  if (frac >= 0.8) return "#2e7d32";
-  if (frac >= 0.5) return "#f9a825";
-  return "#c62828";
+  if (frac >= 0.8) return COLORS.good;
+  if (frac >= 0.5) return COLORS.mid;
+  return COLORS.bad;
 }
 
 export const HARM_COLORS: Record<string, string> = {
-  severe: "#c62828",
-  moderate: "#f9a825",
-  low: "#6c757d",
+  severe: COLORS.bad,
+  moderate: COLORS.mid,
+  low: COLORS.muted,
 };
 
 // mirrors service.HARM_CATEGORIES

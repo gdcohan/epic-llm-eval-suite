@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api";
 import type { OverviewRow, OverviewStats } from "../types";
-import { HARM_COLORS, fmtScore, scoreColor } from "../lib";
+import { COLORS, HARM_COLORS, fmtScore, scoreColor } from "../lib";
 import { Alert, BarChart, KpiCard, Spinner } from "../components/ui";
 
 const SEVERITIES = ["low", "moderate", "severe"] as const;
@@ -46,7 +46,7 @@ function CasePicker({
               {r?.max_harm && (
                 <span
                   className="rounded px-1.5 py-0.5 text-[11px] font-medium text-white"
-                  style={{ background: HARM_COLORS[r.max_harm] ?? "#6c757d" }}
+                  style={{ background: HARM_COLORS[r.max_harm] ?? COLORS.muted }}
                 >
                   {r.max_harm}
                 </span>
@@ -90,10 +90,10 @@ function HarmMatrix({
       ) : (
         <table className="w-full table-fixed text-sm">
           <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
-              <th className="w-[40%] py-1.5 pr-3">category</th>
+            <tr className="text-xs uppercase tracking-wide text-slate-500">
+              <th className="w-[40%] py-1.5 text-left">category</th>
               {SEVERITIES.map((s) => (
-                <th key={s} className="w-[20%] py-1.5 pr-3">
+                <th key={s} className="w-[20%] py-1.5 text-center">
                   {s}
                 </th>
               ))}
@@ -102,12 +102,12 @@ function HarmMatrix({
           <tbody>
             {cats.map((cat) => (
               <tr key={cat} className="border-t border-slate-100">
-                <td className="py-1.5 pr-3 text-slate-700">{cat}</td>
+                <td className="py-1.5 text-slate-700">{cat}</td>
                 {SEVERITIES.map((sev) => {
                   const v = hm[cat]?.[sev] ?? 0;
                   const caseIds = hmCases[cat]?.[sev] ?? [];
                   return (
-                    <td key={sev} className="py-1.5 pr-3">
+                    <td key={sev} className="py-1.5 text-center">
                       {v > 0 ? (
                         <button
                           type="button"
@@ -281,7 +281,7 @@ export default function Overview({ openCase }: { openCase: (caseId: string) => v
                               {harm ? (
                                 <span
                                   className="inline-block rounded px-2 py-0.5 text-center font-medium text-white"
-                                  style={{ background: HARM_COLORS[harm] ?? "#6c757d" }}
+                                  style={{ background: HARM_COLORS[harm] ?? COLORS.muted }}
                                 >
                                   {harm}
                                 </span>
