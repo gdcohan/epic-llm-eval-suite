@@ -4,7 +4,7 @@ Continuity notes so a new session (or a new contributor) can pick up without
 re-deriving everything. Pair this with `README.md` (how to run) and `ROADMAP.md`
 (what's next).
 
-**Working branch:** `claude/dreamy-wright-Qe8jN` (develop + push here).
+**Working branch:** `claude/gracious-mendel-u4go4n` (develop + push here).
 
 ---
 
@@ -38,7 +38,9 @@ is built to not depend on it (pasted-notes escape hatch everywhere).
 | `jury.py` | `run_jury(notes, summary, dims, panel, source_guidance, output_contract)`: aggregates source notes chronologically, runs each (dimension × juror), per-dimension stats + disagreement + findings. |
 | `llm_providers.py` | Pluggable providers: anthropic / openai / **gemini** / stub. |
 | `service.py` | The layer the CLI **and** UI share: list/create/judge cases, gather notes, adjudication (dimension + **finding-level**), `overview_stats`, `precision_stats`, `judge_adhoc`. |
-| `app.py` | Streamlit UI (Overview / Summary Explorer / Jury Config / Live Judge / Calibrate). |
+| `api.py` | FastAPI backend for the web UI: thin HTTP wrapper over service/config, enriches verdict findings with adjudication keys, serves the built SPA from `web/dist`. |
+| `web/` | React + Vite + TypeScript + Tailwind frontend — the PRIMARY UI (same five sections as the Streamlit app, feature parity). `npm run build` then serve via uvicorn; `npm run dev` proxies `/api` to :8000. |
+| `app.py` | LEGACY Streamlit UI (Overview / Summary Explorer / Jury Config / Live Judge / Calibrate) — kept until the web UI is proven, then delete. |
 | `main.py` | CLI (demo / fetch / discover / case / judge-case / run). |
 | `mock_client.py`, `mock_data/` | Offline FHIR fixtures for `python main.py demo`. |
 | `examples/cases/*.json`, `examples/generate_demo_cases.py` | Sample + 5 lifespan demo cases. |

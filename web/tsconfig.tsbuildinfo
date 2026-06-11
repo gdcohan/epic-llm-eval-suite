@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/api.ts","./src/lib.ts","./src/main.tsx","./src/types.ts","./src/components/NotesList.tsx","./src/components/VerdictView.tsx","./src/components/ui.tsx","./src/sections/Calibrate.tsx","./src/sections/Explorer.tsx","./src/sections/JuryConfig.tsx","./src/sections/LiveJudge.tsx","./src/sections/Overview.tsx"],"version":"5.9.3"}

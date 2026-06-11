@@ -129,10 +129,25 @@ python main.py judge-case --case examples/cases/recency_demo.json --mock
 demonstrable with zero external dependencies. Set `JURY_MODE=live` plus the
 relevant API key for substantive judgments.
 
-## UI (Streamlit)
+## UI
+
+The primary UI is a FastAPI + React app (`api.py` + `web/`); the original
+Streamlit app (`app.py`) is kept as a legacy fallback. Both sit on the same
+service layer (`service.py`), so they stay in lockstep feature-wise.
 
 ```bash
-streamlit run app.py            # JURY_MODE / JURY_PANEL from the environment
+# one-time frontend build
+cd web && npm install && npm run build && cd ..
+
+# serve the API + built UI on http://localhost:8000
+uvicorn api:app --port 8000     # JURY_MODE / JURY_PANEL from the environment
+```
+
+For frontend development run both `uvicorn api:app --port 8000` and
+`cd web && npm run dev` (Vite on http://localhost:5173, proxying `/api`).
+
+```bash
+streamlit run app.py            # legacy Streamlit UI, same features
 ```
 
 Populate five sample lifespan cases (annual-visit patients aged 12/25/40/65/80,
@@ -206,7 +221,9 @@ alarms — the tuning signal. Recall (issues the jury *missed*) is the next step
 | `jury.py` | Panel runner, multi-note aggregation + scoring + disagreement |
 | `cases.py` | Eval-case manifests (summary ↔ source note IDs) |
 | `service.py` | Service layer for CLI/UI: cases, notes, adjudication, overview/precision stats |
-| `app.py` | Streamlit UI (Overview / Explorer / Jury Config / Live Judge / Calibrate) |
+| `api.py` | FastAPI backend for the web UI (wraps service/config; serves `web/dist`) |
+| `web/` | React + Vite + Tailwind frontend (Overview / Explorer / Jury Config / Live Judge / Calibrate) |
+| `app.py` | Legacy Streamlit UI (same sections, same service layer) |
 | `mock_client.py`, `mock_data/` | Offline fixtures for the demo |
 | `examples/cases/`, `examples/generate_demo_cases.py` | Sample cases + the 5 lifespan demo-case generator |
 | `main.py` | CLI |
