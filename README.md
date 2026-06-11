@@ -165,12 +165,14 @@ Explorer**, **Jury Config**, **Live Judge**, and **Calibrate**.
 issues, **# with a severe issue**, # juror splits), avg-score and issue-count bar
 charts by dimension, a **harm matrix** (category × severity, counted by case),
 and a sortable **case scorecard** (per-dimension scores shaded red + a **max-harm**
-column). The *With issues* and *Severe* KPIs filter the scorecard, and selecting a
-row opens that case in the Explorer. (Harm aggregates are case-level — robust to
-panel size — and appear on live runs.)
+column). The *With issues* and *Severe* KPIs and the harm-matrix cells jump
+straight to that case in the Explorer (an anchored picker appears when several
+match), and selecting a scorecard row does the same. (Harm aggregates are
+case-level — robust to panel size — and appear on live runs.)
 
-**Summary Explorer** (V1, 3a) has the ingested summaries in the left sidebar and
-a two-column body (independently scrollable):
+**Summary Explorer** has the ingested summaries in a collapsible left sidebar
+and a two-column body (independently scrollable; the notes column starts
+collapsed and opens on demand or via any ↪ source link):
 - **col 1 — summary + judge synopsis**: the summary (with flagged spans
   highlighted), then per-dimension score, **disagreement** (agreement badge +
   each juror's score and one-line synopsis), and **structured, source-linked
@@ -181,7 +183,9 @@ a two-column body (independently scrollable):
   Plus **✎ Adjudicate** — set a final per-dimension human score (e.g. resolve a
   2-vs-4 split as a 4). Adjudications are stored separately from the jury verdict,
   survive re-runs, and become the ground-truth labels for the future calibrator.
-- **col 2 — reference notes**: each expandable to cleaned text (+ raw FHIR).
+- **col 2 — reference notes**: each expandable to cleaned text (+ raw FHIR);
+  selecting a span offers **✋ missing from summary** (span-level omission
+  flagging).
 
 **➕ New summary** creates a case from a summary plus reference notes given as
 Epic note IDs, **pasted note text**, or a mix — the pasted path is a first-class
@@ -190,20 +194,21 @@ escape hatch so the whole pipeline is demonstrable without FHIR. (A disabled
 mode the app is fully offline; `JURY_MODE=live` (+ keys) fetches notes by ID and
 renders real judgments.
 
-**Jury Config** (3b) — edit everything that defines the jury, persisted globally
-to `data/jury_config.json` and applied on the next run: **dimensions** (add /
-toggle / remove + prompts), **personas** (add / remove + temperature/text),
-**models** (`provider:model`), and the shared **recency guidance** and **output
-contract** (editable, with reset). The live panel is the **cross-product of
-models × personas**; a preview shows the resulting juror count and calls-per-case.
+**Jury Config** — edit everything that defines the jury, persisted globally
+to `data/jury_config.json` and applied on the next run: **dimensions**,
+**personas**, and **models** can each be added, removed, edited, and
+**enabled/disabled without deleting** (the live panel = enabled models ×
+enabled personas), plus the shared **recency guidance** and **output contract**
+(editable, with reset). A preview shows the resulting juror count and
+calls-per-case, and the app header's juror list stays in sync with saves.
 **Show-the-prompt** previews the exact assembled juror prompt.
 
-**Live Judge** (3c) — a scratchpad: paste or fetch notes, type a summary, and
+**Live Judge** — a scratchpad: paste or fetch notes, type a summary, and
 **Judge** it live; edit the summary and re-judge to watch the scores move
 (break-it-live). Nothing persists unless you **Save as case** (which drops it
 into the Explorer).
 
-**Calibrate** (#4 core) — finding-level calibration. In a verdict (Explorer),
+**Calibrate** — finding-level calibration. In a verdict (Explorer),
 mark each jury finding **✓ valid / ✗ false alarm**; the Calibrate tab reports
 per-dimension **precision** (validated ÷ labeled) and drills into the false
 alarms — the tuning signal. Humans can also **✋ flag missed issues** the jury
