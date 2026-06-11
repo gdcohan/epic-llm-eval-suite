@@ -173,10 +173,10 @@ export function BarChart({
   const entries = Object.entries(data);
   const top = max ?? Math.max(1, ...entries.map(([, v]) => v));
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="mb-3 text-sm font-medium text-slate-600">{title}</div>
       {entries.length === 0 && <div className="text-sm text-slate-400">no data</div>}
-      <div className="space-y-2">
+      <div className="flex flex-1 flex-col justify-around gap-2">
         {entries.map(([label, value]) => (
           <div key={label} className="flex items-center gap-3 text-sm">
             <div className="w-36 shrink-0 truncate text-slate-600">{label}</div>
