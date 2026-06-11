@@ -367,11 +367,22 @@ export default function Explorer({
               className="max-h-[46rem] min-w-0 flex-1 space-y-4 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/60 p-4"
               style={notesOpen ? { flex: "none", width: `${split * 100}%` } : undefined}
             >
-              <div>
-                <span className="text-base font-semibold text-slate-800">{detail.case.case_id}</span>
-                <span className="ml-2 text-xs text-slate-500">
-                  · source: {detail.case.summary?.source || "—"}
-                </span>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="min-w-0">
+                  <span className="text-base font-semibold text-slate-800">{detail.case.case_id}</span>
+                  <span className="ml-2 text-xs text-slate-500">
+                    · source: {detail.case.summary?.source || "—"}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className={`${primaryButtonClass} !px-2.5 !py-1 !text-xs`}
+                  disabled={judging}
+                  onClick={runJury}
+                >
+                  {verdict ? "↻ Re-run jury" : "▶ Run jury"}
+                </button>
+                {judging && <Spinner label="Polling the jury…" />}
               </div>
               <div>
                 <div className="mb-1 text-sm font-semibold text-slate-700">Summary</div>
@@ -380,28 +391,23 @@ export default function Explorer({
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <button type="button" className={primaryButtonClass} disabled={judging} onClick={runJury}>
-                  {verdict ? "↻ Re-run jury" : "▶ Run jury"}
-                </button>
-                {judging && <Spinner label="Polling the jury…" />}
-              </div>
-
               {!verdict ? (
                 <Alert kind="info">Not judged yet — click Run jury.</Alert>
               ) : (
                 <>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-semibold text-slate-700">Judge synopsis</span>
                     <span className="text-xs text-slate-500">overall</span>
                     <ScoreBadge score={verdict.overall_score} />
+                    <span className="min-w-2 flex-1" />
+                    <input
+                      className={`${inputClass} !w-52 !py-1 !text-xs`}
+                      placeholder="adjudicator name"
+                      title="your name, attached to score overrides and missed-issue flags"
+                      value={adjudicator}
+                      onChange={(e) => setAdjudicator(e.target.value)}
+                    />
                   </div>
-                  <input
-                    className={inputClass}
-                    placeholder="Adjudicator — your name (for the overrides below)"
-                    value={adjudicator}
-                    onChange={(e) => setAdjudicator(e.target.value)}
-                  />
                   <VerdictView
                     verdict={verdict}
                     adjudication={detail.adjudication}
