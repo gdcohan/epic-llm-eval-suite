@@ -32,8 +32,10 @@ agreement across jurors) + aggregated flagged issues.
 ### 4. Calibration / tuning (near term)  · *needs API keys to run*
 
 *(Core built: finding-level ✓/✗ labeling in the Explorer verdict + a Calibrate
-tab with per-dimension precision and a false-alarm drill-down. Remaining: de novo
-probe authoring, then recall.)*
+tab with per-dimension precision and a false-alarm drill-down. Also built: the
+omission-probe suite (`probes.py` — de novo probes for comprehensiveness) and
+✋ human-authored missed issues (`authored_findings`, counted in Calibrate).
+Remaining: recall/F1 quantification — see the forward plan in `HANDOFF.md`.)*
 
 **The unit of calibration is a finding, not a whole case** (a full-case score
 over many notes is noisy and unattributable). A labeled example = a jury finding

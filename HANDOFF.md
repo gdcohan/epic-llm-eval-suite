@@ -17,7 +17,8 @@ A quick-and-dirty POC, forked from an Epic *SDOH agent* but repurposed:
 3. run an **LLM-as-jury** that evaluates a **GenAI summary against the totality of
    its source notes**, producing per-dimension scores + structured, source-linked
    findings, and
-4. a **Streamlit UI** to explore, configure, live-judge, and calibrate it.
+4. a **web UI** (FastAPI `api.py` + React `web/` — primary; Streamlit `app.py` is
+   the legacy fallback) to explore, configure, live-judge, and calibrate it.
 
 The real-world driver: evaluating the source notes behind **Epic GenAI summaries**.
 We don't yet know how Epic exposes summary→source-note provenance, so the pipeline
@@ -106,29 +107,68 @@ is built to not depend on it (pasted-notes escape hatch everywhere).
 
 ---
 
-## Current state — and the BIG gap
+## Current state
 
-Everything below is **validated in stub mode** (offline, deterministic) and via
-Streamlit `AppTest`. **No `JURY_MODE=live` run has happened yet.** So:
+**The web UI is primary** (June 2026 rebuild): `api.py` (FastAPI over the same
+service layer) + `web/` (React/Vite/TS/Tailwind), all five sections at parity
+with — and now beyond — the legacy Streamlit app. UI niceties added since the
+rebuild: browser-history routing (`/explorer/<case>` deep links; Back unwinds
+navigation), collapsible case sidebar / reference-notes column / dimension
+cards / issues zone (issues start collapsed), Overview KPI + harm-matrix cells
+navigate straight to the Explorer (anchored picker when several cases match),
+enable/disable toggles for dimensions AND personas AND models (explicit 💾
+save; panel = enabled models × enabled personas), header juror list stays in
+sync with config saves. Reproduction from a clean clone: see `CLAUDE.md`.
 
-- Real findings, harm badges, the Calibrate precision numbers, and the Overview
-  harm matrix are all **empty/meaningless until a live run** (stub emits no findings).
-- **The single highest-value next action is a live shakedown** (`JURY_MODE=live`
-  with Claude + Gemini) across the 5 demo cases — to confirm the prompts behave,
-  the planted errors get caught, verbatim highlights land, and harm/severity is
-  sane. It doubles as the demo rehearsal.
-
-What IS proven live: **fetching real notes from the Epic public sandbox**
-(Jason Argonaut), incl. the DocumentReference→Binary hop and markup/dedup cleanup.
+**Live runs have started.** The user has run the live jury (Claude + Gemini).
+First live lesson already fixed: juror JSON was truncated at the Anthropic
+adapter's old `max_tokens=1500` → now 8000 + explicit truncation error + one
+retry on unparseable-JSON responses. No systematic live calibration pass has
+been recorded yet.
 
 **Built:** fetch + extraction; multi-vendor jury + disagreement; structured
-source-linked findings; reconciliation framework; harm matrix V1; full UI
-(Overview w/ harm, Explorer w/ adjudication + finding-labeling, Jury Config, Live
-Judge, Calibrate precision); 5 demo cases.
+source-linked findings; reconciliation framework; harm matrix V1; full web UI
+(Overview w/ harm, Explorer w/ adjudication + finding-labeling + ✋ authored
+missed issues, Jury Config, Live Judge, Calibrate precision + authored counts);
+5 demo cases; **omission-probe harness** (`probes.py`); **rewritten
+omission-only comprehensiveness judge**.
 
-**Not built yet:** live calibration run; **recall** authoring; **de novo probe**
-authoring; Live-Judge **pin/compare** tuning loop; harm **roll-up score / V2 pass**;
-A/B config experiments; synthetic summary generation; prod/PHI hardening.
+**Not built yet:** recall/F1 quantification (deliberately deferred — see
+forward plan below); Live-Judge **pin/compare** tuning loop; harm **roll-up
+score / V2 pass**; A/B config experiments; synthetic summary generation;
+prod/PHI hardening; Streamlit retirement.
+
+---
+
+## Forward plan: comprehensiveness → recall (agreed with the user)
+
+The agreed sequencing — get comprehensiveness good first, quantify recall later:
+
+1. **Now (built):** omission-only comprehensiveness prompt (internal two-pass,
+   notes→summary, accuracy firewall) + ✋ human-flagged missed issues
+   (`authored_findings`) + the omission-probe suite.
+2. **Next action:** a live probe run (`JURY_MODE=live python probes.py`).
+   The panel split is a deliberate A/B: the Anthropic juror runs WITHOUT
+   extended thinking (no internal scratchpad — the "internally do two passes"
+   instruction is aspirational there) while Gemini 2.5 Pro thinks by default.
+   Per-juror probe recall tells us whether the scratchpad matters and guides
+   model choice.
+3. **Escalation if probes show misses** (in order): (a) make the judge EMIT the
+   fact inventory as structured output (extra `inventory` key; needs a small
+   `jury.py` passthrough since it keeps only score/synopsis/findings — buys
+   reliability for non-thinking models AND auditability of which facts were
+   enumerated vs wrongly marked present); (b) enable extended thinking for the
+   Anthropic juror (reliability without auditability); (c) true two-call
+   scaffold (extract checklist, then check coverage; score = coverage ratio).
+4. **Recall quantification, eventually, in three layers:**
+   - *Panel-union recall* (free): per-juror recall against the union of
+     human-validated findings across the panel — falls out of existing labels.
+   - *Probe recall* (controlled): caught/planted from the probe suite,
+     stratified by harm severity; exact ground truth, but synthetic
+     distribution.
+   - *Observed recall* (gold): validated ÷ (validated + authored-missed) from
+     `authored_findings` — biased upward (anchoring) but measures reality; the
+     storage is already shaped for this (assertions, separate from labels).
 
 ---
 
@@ -139,8 +179,13 @@ A/B config experiments; synthetic summary generation; prod/PHI hardening.
   across sessions; re-run `python examples/generate_demo_cases.py` to reseed.
   (Two stale verdict JSONs are tracked from an early force-commit; intentionally
   left.)
-- **Env is read at process start** — after editing `.env` or the panel, **restart**
-  `streamlit run`; the in-app Rerun won't pick it up.
+- **Env is read at process start** — after editing `.env`, **restart** the
+  server (uvicorn or streamlit).
+- **Stale-server trap**: `npm run dev` reloads only the frontend; after pulling
+  backend changes restart uvicorn (or run `--reload`). A stale server's pydantic
+  models silently strip new fields — looks like "saves don't persist".
+- **Config shadowing**: `data/jury_config.json` overrides code defaults; after a
+  default-prompt change, reset dimensions in Jury Config or the jury never sees it.
 - **Stub vs live:** `JURY_MODE=stub` (default) is fully offline; `live` needs the
   relevant API key(s); fetching uncached notes by ID needs Epic creds (live only).
 - **Validation:** the app is testable headless via `streamlit.testing.v1.AppTest`
