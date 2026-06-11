@@ -19,15 +19,23 @@
     }
   ],
   "base_summary_facts": [
-    "T2DM + HTN", "metformin", "lisinopril", "atorvastatin", "penicillin anaphylaxis",
-    "A1c 8.2 worsened from 7.1", "CKD 3a (eGFR 58)", "overdue colonoscopy referral",
-    "A1c recheck in 3 months"
+    "T2DM + HTN",
+    "metformin",
+    "lisinopril",
+    "atorvastatin",
+    "penicillin anaphylaxis",
+    "A1c 8.2 worsened from 7.1",
+    "CKD 3a (eGFR 58)",
+    "overdue colonoscopy referral",
+    "A1c recheck in 3 months",
+    "LDL 88",
+    "good medication adherence"
   ],
   "probes": [
     {
       "probe_id": "control-nothing-omitted",
       "planted": [],
-      "summary": "58-year-old male with type 2 diabetes and hypertension seen for his annual exam. Glycemic control has worsened, with A1c rising to 8.2% from 7.1% six months ago; a repeat A1c is planned in 3 months. He has stage 3a chronic kidney disease (eGFR 58). Medications are metformin 1000 mg twice daily, lisinopril 20 mg daily, and atorvastatin 40 mg nightly. He has a penicillin allergy with anaphylaxis. Blood pressure was elevated at 142/88. A colonoscopy referral was placed as he is overdue for screening."
+      "summary": "58-year-old male with type 2 diabetes and hypertension seen for his annual exam. Glycemic control has worsened, with A1c rising to 8.2% from 7.1% six months ago; a repeat A1c is planned in 3 months. He has stage 3a chronic kidney disease (eGFR 58). Medications are metformin 1000 mg twice daily, lisinopril 20 mg daily, and atorvastatin 40 mg nightly. He has a penicillin allergy with anaphylaxis. Blood pressure was elevated at 142/88. A colonoscopy referral was placed as he is overdue for screening. His LDL cholesterol is 88 mg/dL, and he reports good adherence to his medications."
     },
     {
       "probe_id": "omit-allergy",
@@ -36,10 +44,14 @@
           "description": "penicillin anaphylaxis allergy omitted",
           "note_quote": "ALLERGIES: Penicillin — anaphylaxis.",
           "harm_severity": "severe",
-          "match_terms": ["penicillin", "allerg", "anaphylaxis"]
+          "match_terms": [
+            "penicillin",
+            "allerg",
+            "anaphylaxis"
+          ]
         }
       ],
-      "summary": "58-year-old male with type 2 diabetes and hypertension seen for his annual exam. Glycemic control has worsened, with A1c rising to 8.2% from 7.1% six months ago; a repeat A1c is planned in 3 months. He has stage 3a chronic kidney disease (eGFR 58). Medications are metformin 1000 mg twice daily, lisinopril 20 mg daily, and atorvastatin 40 mg nightly. Blood pressure was elevated at 142/88. A colonoscopy referral was placed as he is overdue for screening."
+      "summary": "58-year-old male with type 2 diabetes and hypertension seen for his annual exam. Glycemic control has worsened, with A1c rising to 8.2% from 7.1% six months ago; a repeat A1c is planned in 3 months. He has stage 3a chronic kidney disease (eGFR 58). Medications are metformin 1000 mg twice daily, lisinopril 20 mg daily, and atorvastatin 40 mg nightly. Blood pressure was elevated at 142/88. A colonoscopy referral was placed as he is overdue for screening. His LDL cholesterol is 88 mg/dL, and he reports good adherence to his medications."
     },
     {
       "probe_id": "omit-a1c-worsening",
@@ -48,10 +60,14 @@
           "description": "worsening A1c (8.2 from 7.1) omitted",
           "note_quote": "A1c 8.2% (HIGH; prior 7.1% six months ago) — worsening glycemic control.",
           "harm_severity": "moderate",
-          "match_terms": ["a1c", "8.2", "glycemic"]
+          "match_terms": [
+            "a1c",
+            "8.2",
+            "glycemic"
+          ]
         }
       ],
-      "summary": "58-year-old male with type 2 diabetes and hypertension seen for his annual exam. A repeat A1c is planned in 3 months. He has stage 3a chronic kidney disease (eGFR 58). Medications are metformin 1000 mg twice daily, lisinopril 20 mg daily, and atorvastatin 40 mg nightly. He has a penicillin allergy with anaphylaxis. Blood pressure was elevated at 142/88. A colonoscopy referral was placed as he is overdue for screening."
+      "summary": "58-year-old male with type 2 diabetes and hypertension seen for his annual exam. A repeat A1c is planned in 3 months. He has stage 3a chronic kidney disease (eGFR 58). Medications are metformin 1000 mg twice daily, lisinopril 20 mg daily, and atorvastatin 40 mg nightly. He has a penicillin allergy with anaphylaxis. Blood pressure was elevated at 142/88. A colonoscopy referral was placed as he is overdue for screening. His LDL cholesterol is 88 mg/dL, and he reports good adherence to his medications."
     },
     {
       "probe_id": "omit-ckd",
@@ -60,10 +76,15 @@
           "description": "CKD stage 3a / eGFR 58 omitted",
           "note_quote": "eGFR 58 mL/min (CKD stage 3a).",
           "harm_severity": "moderate",
-          "match_terms": ["ckd", "egfr", "kidney", "renal"]
+          "match_terms": [
+            "ckd",
+            "egfr",
+            "kidney",
+            "renal"
+          ]
         }
       ],
-      "summary": "58-year-old male with type 2 diabetes and hypertension seen for his annual exam. Glycemic control has worsened, with A1c rising to 8.2% from 7.1% six months ago; a repeat A1c is planned in 3 months. Medications are metformin 1000 mg twice daily, lisinopril 20 mg daily, and atorvastatin 40 mg nightly. He has a penicillin allergy with anaphylaxis. Blood pressure was elevated at 142/88. A colonoscopy referral was placed as he is overdue for screening."
+      "summary": "58-year-old male with type 2 diabetes and hypertension seen for his annual exam. Glycemic control has worsened, with A1c rising to 8.2% from 7.1% six months ago; a repeat A1c is planned in 3 months. Medications are metformin 1000 mg twice daily, lisinopril 20 mg daily, and atorvastatin 40 mg nightly. He has a penicillin allergy with anaphylaxis. Blood pressure was elevated at 142/88. A colonoscopy referral was placed as he is overdue for screening. His LDL cholesterol is 88 mg/dL, and he reports good adherence to his medications."
     },
     {
       "probe_id": "omit-colonoscopy",
@@ -72,10 +93,14 @@
           "description": "overdue colonoscopy referral omitted",
           "note_quote": "colonoscopy referral placed (age 58, never screened — overdue)",
           "harm_severity": "moderate",
-          "match_terms": ["colonoscopy", "screening referral", "colorectal"]
+          "match_terms": [
+            "colonoscopy",
+            "screening referral",
+            "colorectal"
+          ]
         }
       ],
-      "summary": "58-year-old male with type 2 diabetes and hypertension seen for his annual exam. Glycemic control has worsened, with A1c rising to 8.2% from 7.1% six months ago; a repeat A1c is planned in 3 months. He has stage 3a chronic kidney disease (eGFR 58). Medications are metformin 1000 mg twice daily, lisinopril 20 mg daily, and atorvastatin 40 mg nightly. He has a penicillin allergy with anaphylaxis. Blood pressure was elevated at 142/88."
+      "summary": "58-year-old male with type 2 diabetes and hypertension seen for his annual exam. Glycemic control has worsened, with A1c rising to 8.2% from 7.1% six months ago; a repeat A1c is planned in 3 months. He has stage 3a chronic kidney disease (eGFR 58). Medications are metformin 1000 mg twice daily, lisinopril 20 mg daily, and atorvastatin 40 mg nightly. He has a penicillin allergy with anaphylaxis. Blood pressure was elevated at 142/88. His LDL cholesterol is 88 mg/dL, and he reports good adherence to his medications."
     },
     {
       "probe_id": "omit-medication",
@@ -84,10 +109,13 @@
           "description": "atorvastatin omitted from the medication list",
           "note_quote": "Atorvastatin 40 mg PO nightly.",
           "harm_severity": "moderate",
-          "match_terms": ["atorvastatin", "statin"]
+          "match_terms": [
+            "atorvastatin",
+            "statin"
+          ]
         }
       ],
-      "summary": "58-year-old male with type 2 diabetes and hypertension seen for his annual exam. Glycemic control has worsened, with A1c rising to 8.2% from 7.1% six months ago; a repeat A1c is planned in 3 months. He has stage 3a chronic kidney disease (eGFR 58). Medications are metformin 1000 mg twice daily and lisinopril 20 mg daily. He has a penicillin allergy with anaphylaxis. Blood pressure was elevated at 142/88. A colonoscopy referral was placed as he is overdue for screening."
+      "summary": "58-year-old male with type 2 diabetes and hypertension seen for his annual exam. Glycemic control has worsened, with A1c rising to 8.2% from 7.1% six months ago; a repeat A1c is planned in 3 months. He has stage 3a chronic kidney disease (eGFR 58). Medications are metformin 1000 mg twice daily and lisinopril 20 mg daily. He has a penicillin allergy with anaphylaxis. Blood pressure was elevated at 142/88. A colonoscopy referral was placed as he is overdue for screening. His LDL cholesterol is 88 mg/dL, and he reports good adherence to his medications."
     },
     {
       "probe_id": "omit-followup",
@@ -96,10 +124,15 @@
           "description": "3-month A1c recheck plan omitted",
           "note_quote": "recheck A1c in 3 months",
           "harm_severity": "moderate",
-          "match_terms": ["recheck", "3 months", "follow-up", "repeat a1c"]
+          "match_terms": [
+            "recheck",
+            "3 months",
+            "follow-up",
+            "repeat a1c"
+          ]
         }
       ],
-      "summary": "58-year-old male with type 2 diabetes and hypertension seen for his annual exam. Glycemic control has worsened, with A1c rising to 8.2% from 7.1% six months ago. He has stage 3a chronic kidney disease (eGFR 58). Medications are metformin 1000 mg twice daily, lisinopril 20 mg daily, and atorvastatin 40 mg nightly. He has a penicillin allergy with anaphylaxis. Blood pressure was elevated at 142/88. A colonoscopy referral was placed as he is overdue for screening."
+      "summary": "58-year-old male with type 2 diabetes and hypertension seen for his annual exam. Glycemic control has worsened, with A1c rising to 8.2% from 7.1% six months ago. He has stage 3a chronic kidney disease (eGFR 58). Medications are metformin 1000 mg twice daily, lisinopril 20 mg daily, and atorvastatin 40 mg nightly. He has a penicillin allergy with anaphylaxis. Blood pressure was elevated at 142/88. A colonoscopy referral was placed as he is overdue for screening. His LDL cholesterol is 88 mg/dL, and he reports good adherence to his medications."
     }
   ]
 }

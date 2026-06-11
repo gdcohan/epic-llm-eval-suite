@@ -145,8 +145,15 @@ sync with config saves. Reproduction from a clean clone: see `CLAUDE.md`.
 **Live runs have started.** The user has run the live jury (Claude + Gemini).
 First live lesson already fixed: juror JSON was truncated at the Anthropic
 adapter's old `max_tokens=1500` → now 8000 + explicit truncation error + one
-retry on unparseable-JSON responses. No systematic live calibration pass has
-been recorded yet.
+retry on unparseable-JSON responses. **First live probe run (June 2026):
+panel recall 6/6 planted omissions** — the rewritten comprehensiveness judge
+works. Per juror: Gemini 2.5 Pro (thinks by default) 6/6; Claude Sonnet
+(no extended thinking) 5/6, missing only the subtlest plant (CKD staging in a
+lab line) — weak directional evidence for the scratchpad, not enough to
+escalate to the emitted inventory yet. The control's 2 "false" omissions (LDL,
+adherence) were real gaps in the probe's base summary — authoring fixed; the
+panel ran strict-only (balanced was disabled), so the persona-sensitivity
+question is still open.
 
 **Built:** fetch + extraction; multi-vendor jury + disagreement; structured
 source-linked findings; reconciliation framework; harm matrix V1; full web UI
@@ -167,13 +174,13 @@ The agreed sequencing — get comprehensiveness good first, quantify recall late
 1. **Now (built):** omission-only comprehensiveness prompt (internal two-pass,
    notes→summary, accuracy firewall) + ✋ human-flagged missed issues
    (`authored_findings`) + the omission-probe suite.
-2. **Next action:** a live probe run (`JURY_MODE=live python probes.py`).
-   The panel split is a deliberate A/B: the Anthropic juror runs WITHOUT
-   extended thinking (no internal scratchpad — the "internally do two passes"
-   instruction is aspirational there) while Gemini 2.5 Pro thinks by default.
-   Per-juror probe recall tells us whether the scratchpad matters and guides
-   model choice.
-3. **Escalation if probes show misses** (in order): (a) make the judge EMIT the
+2. **Done — first live probe run:** panel 6/6 (see Current state). Next
+   probe-related actions: re-run with the balanced persona enabled (persona
+   sensitivity read), and re-run after probe-summary fixes to confirm a clean
+   control.
+3. **Escalation if probes show misses** (in order; NOT yet triggered — the
+   single Anthropic miss on the subtlest plant is insufficient evidence):
+   (a) make the judge EMIT the
    fact inventory as structured output (extra `inventory` key; needs a small
    `jury.py` passthrough since it keeps only score/synopsis/findings — buys
    reliability for non-thinking models AND auditability of which facts were
