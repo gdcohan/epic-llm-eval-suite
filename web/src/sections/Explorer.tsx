@@ -106,7 +106,7 @@ export default function Explorer({
   setSelectedCase,
 }: {
   selectedCase: string | null;
-  setSelectedCase: (id: string | null) => void;
+  setSelectedCase: (id: string | null, opts?: { replace?: boolean }) => void;
 }) {
   const [casesList, setCasesList] = useState<CaseMeta[] | null>(null);
   const [detail, setDetail] = useState<CaseDetail | null>(null);
@@ -125,7 +125,8 @@ export default function Explorer({
     loadCases()
       .then((list) => {
         if (list.length && !list.some((c) => c.case_id === selectedCase)) {
-          setSelectedCase(list[0].case_id);
+          // default selection, not a user action — don't create a history entry
+          setSelectedCase(list[0].case_id, { replace: true });
         }
       })
       .catch((e) => setNotice({ kind: "error", text: String(e) }));

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import type { PanelInfo } from "./types";
 import Overview from "./sections/Overview";
@@ -10,19 +10,73 @@ import Calibrate from "./sections/Calibrate";
 const SECTIONS = ["Overview", "Summary Explorer", "Jury Config", "Live Judge", "Calibrate"] as const;
 type Section = (typeof SECTIONS)[number];
 
+type Route = { section: Section; caseId: string | null };
+
+const SECTION_PATHS: Record<Section, string> = {
+  Overview: "/",
+  "Summary Explorer": "/explorer",
+  "Jury Config": "/config",
+  "Live Judge": "/live",
+  Calibrate: "/calibrate",
+};
+
+function parseRoute(pathname: string): Route {
+  if (pathname === "/explorer" || pathname.startsWith("/explorer/")) {
+    const caseId = decodeURIComponent(pathname.slice("/explorer/".length));
+    return { section: "Summary Explorer", caseId: caseId || null };
+  }
+  const section = (Object.keys(SECTION_PATHS) as Section[]).find(
+    (s) => SECTION_PATHS[s] === pathname,
+  );
+  return { section: section ?? "Overview", caseId: null };
+}
+
+function routePath(route: Route): string {
+  if (route.section === "Summary Explorer" && route.caseId) {
+    return `/explorer/${encodeURIComponent(route.caseId)}`;
+  }
+  return SECTION_PATHS[route.section];
+}
+
 export default function App() {
-  const [section, setSection] = useState<Section>("Overview");
-  const [selectedCase, setSelectedCase] = useState<string | null>(null);
+  const [route, setRoute] = useState<Route>(() => parseRoute(window.location.pathname));
   const [panel, setPanel] = useState<PanelInfo | null>(null);
+  // remember the last viewed case so re-entering the Explorer tab restores it
+  const lastCase = useRef<string | null>(route.caseId);
 
   useEffect(() => {
     api.get("/api/panel").then(setPanel).catch(() => setPanel(null));
+    // normalize unknown initial paths (e.g. /nonsense) without adding an entry
+    history.replaceState(null, "", routePath(parseRoute(window.location.pathname)));
+    const onPop = () => setRoute(parseRoute(window.location.pathname));
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
   }, []);
 
-  const openCase = (caseId: string) => {
-    setSelectedCase(caseId);
-    setSection("Summary Explorer");
+  useEffect(() => {
+    if (route.caseId) lastCase.current = route.caseId;
+  }, [route.caseId]);
+
+  /** All in-app navigation funnels through here so Back unwinds it step by step. */
+  const navigate = (next: Route, replace = false) => {
+    const path = routePath(next);
+    if (path !== window.location.pathname) {
+      if (replace) history.replaceState(null, "", path);
+      else history.pushState(null, "", path);
+    }
+    setRoute(next);
   };
+
+  const openCase = (caseId: string) => navigate({ section: "Summary Explorer", caseId });
+
+  const setSelectedCase = (caseId: string | null, opts?: { replace?: boolean }) =>
+    navigate({ section: "Summary Explorer", caseId }, opts?.replace);
+
+  const openSection = (section: Section) =>
+    navigate({
+      section,
+      caseId: section === "Summary Explorer" ? lastCase.current : null,
+    });
 
   const live = panel?.mode === "live";
 
@@ -49,9 +103,9 @@ export default function App() {
             <button
               key={s}
               type="button"
-              onClick={() => setSection(s)}
+              onClick={() => openSection(s)}
               className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${
-                section === s
+                route.section === s
                   ? "border-indigo-600 text-indigo-700"
                   : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
               }`}
@@ -63,13 +117,13 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-7xl px-6 py-6">
-        {section === "Overview" && <Overview openCase={openCase} />}
-        {section === "Summary Explorer" && (
-          <Explorer selectedCase={selectedCase} setSelectedCase={setSelectedCase} />
+        {route.section === "Overview" && <Overview openCase={openCase} />}
+        {route.section === "Summary Explorer" && (
+          <Explorer selectedCase={route.caseId} setSelectedCase={setSelectedCase} />
         )}
-        {section === "Jury Config" && <JuryConfig />}
-        {section === "Live Judge" && <LiveJudge openCase={openCase} />}
-        {section === "Calibrate" && <Calibrate />}
+        {route.section === "Jury Config" && <JuryConfig />}
+        {route.section === "Live Judge" && <LiveJudge openCase={openCase} />}
+        {route.section === "Calibrate" && <Calibrate />}
       </main>
     </div>
   );
