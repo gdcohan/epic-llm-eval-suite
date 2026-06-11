@@ -1,4 +1,4 @@
-"""FastAPI backend for the Jury Explorer web UI.
+"""FastAPI backend for the GenAI Eval Harness web UI.
 
 A thin HTTP wrapper over service.py / config.py — the same layer the CLI and
 Streamlit app use, so all three front-ends stay in lockstep.
@@ -23,7 +23,7 @@ import jury
 import rubric_advisor
 import service
 
-app = FastAPI(title="Jury Explorer API")
+app = FastAPI(title="GenAI Eval Harness API")
 
 WEB_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web", "dist")
 

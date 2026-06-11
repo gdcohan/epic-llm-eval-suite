@@ -88,7 +88,7 @@ export default function App() {
     <div className="min-h-screen bg-slate-100">
       <header className="border-b border-slate-200 bg-white">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-6 py-3">
-          <h1 className="text-lg font-bold tracking-tight text-slate-900">Jury Explorer</h1>
+          <h1 className="text-lg font-bold tracking-tight text-slate-900">GenAI Eval Harness</h1>
           {panel && (
             <span className="text-xs text-slate-500">
               {live ? "🟢 live" : "🟡 stub"} · {panel.panel.join(", ")}

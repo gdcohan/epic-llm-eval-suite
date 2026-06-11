@@ -16,7 +16,7 @@ import streamlit as st
 import service
 import config
 
-st.set_page_config(page_title="Jury Explorer", layout="wide")
+st.set_page_config(page_title="GenAI Eval Harness", layout="wide")
 
 
 # ------------------------------------------------------------- helpers
@@ -198,7 +198,7 @@ def render_header():
     live = info["mode"] == "live"
     dot = "🟢 live" if live else "🟡 stub"
     members = ", ".join(info["members"]) if live else "offline stub panel"
-    st.markdown(f"### Jury Explorer &nbsp;&nbsp;<small>{dot} · {members}</small>",
+    st.markdown(f"### GenAI Eval Harness &nbsp;&nbsp;<small>{dot} · {members}</small>",
                 unsafe_allow_html=True)
     if not live:
         st.caption("Stub mode: deterministic placeholder scores. Set JURY_MODE=live "
