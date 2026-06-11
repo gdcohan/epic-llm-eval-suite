@@ -88,12 +88,12 @@ function HarmMatrix({
           No harm-tagged findings yet (harm appears on live jury runs).
         </div>
       ) : (
-        <table className="w-full text-sm">
+        <table className="w-full table-fixed text-sm">
           <thead>
             <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
-              <th className="py-1.5 pr-3">category</th>
+              <th className="w-[40%] py-1.5 pr-3">category</th>
               {SEVERITIES.map((s) => (
-                <th key={s} className="py-1.5 pr-3">
+                <th key={s} className="w-[20%] py-1.5 pr-3">
                   {s}
                 </th>
               ))}
@@ -209,9 +209,7 @@ export default function Overview({ openCase }: { openCase: (caseId: string) => v
         />
       )}
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <KpiCard label="Cases" value={k.cases} />
-        <KpiCard label="Judged" value={k.judged} />
+      <div className="grid grid-cols-3 gap-3">
         <KpiCard label="Avg overall" value={k.avg_overall ?? "—"} />
         <KpiCard
           label="With issues"
@@ -223,7 +221,6 @@ export default function Overview({ openCase }: { openCase: (caseId: string) => v
           value={k.severe_cases}
           onClick={severeCaseIds.length ? (e) => choose(severeCaseIds, e) : undefined}
         />
-        <KpiCard label="Juror splits" value={k.splits} />
       </div>
 
       {k.judged === 0 ? (
@@ -232,10 +229,8 @@ export default function Overview({ openCase }: { openCase: (caseId: string) => v
         <>
           <div className="grid gap-4 lg:grid-cols-2">
             <BarChart title="Avg score by dimension" data={stats.avg_by_dim} max={5} />
-            <BarChart title="Issues by dimension" data={stats.issues_by_dim} color="#f97316" />
+            <HarmMatrix stats={stats} onPickCell={choose} />
           </div>
-
-          <HarmMatrix stats={stats} onPickCell={choose} />
 
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-3 text-sm font-medium text-slate-600">
@@ -307,6 +302,11 @@ export default function Overview({ openCase }: { openCase: (caseId: string) => v
                 </tbody>
               </table>
             </div>
+          </div>
+
+          <div className="text-xs text-slate-400">
+            {k.cases} case{k.cases === 1 ? "" : "s"} · {k.judged} judged · {k.splits} juror split
+            {k.splits === 1 ? "" : "s"}
           </div>
         </>
       )}

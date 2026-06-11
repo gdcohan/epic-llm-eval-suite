@@ -161,11 +161,11 @@ python examples/generate_demo_cases.py
 A section selector across the top switches between **Overview**, **Summary
 Explorer**, **Jury Config**, **Live Judge**, and **Calibrate**.
 
-**Overview** — a cross-case dashboard: KPIs (cases, judged, avg overall, # with
-issues, **# with a severe issue**, # juror splits), avg-score and issue-count bar
-charts by dimension, a **harm matrix** (category × severity, counted by case),
-and a sortable **case scorecard** (per-dimension scores shaded red + a **max-harm**
-column). The *With issues* and *Severe* KPIs and the harm-matrix cells jump
+**Overview** — a cross-case dashboard: KPIs (avg overall, # with issues, **# with
+a severe issue**), an avg-score-by-dimension chart beside a **harm matrix**
+(category × severity, counted by case), and a sortable **case scorecard**
+(per-dimension scores shaded red + a **max-harm** column), with case/judged/split
+counts as a footnote. The *With issues* and *Severe* KPIs and the harm-matrix cells jump
 straight to that case in the Explorer (an anchored picker appears when several
 match), and selecting a scorecard row does the same. (Harm aggregates are
 case-level — robust to panel size — and appear on live runs.)
