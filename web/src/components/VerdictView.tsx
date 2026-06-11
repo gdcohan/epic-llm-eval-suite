@@ -403,6 +403,9 @@ function DimensionCard({
               </button>
               {issuesOpen && (
                 <div className="space-y-2 px-4 pb-3">
+                  {authored.map((f) => (
+                    <AuthoredRow key={f.id} finding={f} onFocusNote={onFocusNote} onRemove={onRemoveAuthored} />
+                  ))}
                   {issues.map((f, i) => (
                     <FindingRow
                       key={f.key ?? i}
@@ -412,9 +415,6 @@ function DimensionCard({
                       onFocusNote={onFocusNote}
                       onToggleLabel={onToggleLabel}
                     />
-                  ))}
-                  {authored.map((f) => (
-                    <AuthoredRow key={f.id} finding={f} onFocusNote={onFocusNote} onRemove={onRemoveAuthored} />
                   ))}
                 </div>
               )}
