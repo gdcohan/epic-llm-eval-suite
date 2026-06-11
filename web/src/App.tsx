@@ -83,7 +83,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-100">
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-1 px-6 py-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-6 py-3">
           <h1 className="text-lg font-bold tracking-tight text-slate-900">Jury Explorer</h1>
           {panel && (
             <span className="text-xs text-slate-500">
@@ -98,7 +98,7 @@ export default function App() {
             </span>
           )}
         </div>
-        <nav className="mx-auto flex max-w-7xl gap-1 px-6">
+        <nav className="flex gap-1 px-4">
           {SECTIONS.map((s) => (
             <button
               key={s}
@@ -116,7 +116,7 @@ export default function App() {
         </nav>
       </header>
 
-      <main className="mx-auto max-w-7xl px-6 py-6">
+      <main className="px-4 py-5">
         {route.section === "Overview" && <Overview openCase={openCase} />}
         {route.section === "Summary Explorer" && (
           <Explorer selectedCase={route.caseId} setSelectedCase={setSelectedCase} />
