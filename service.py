@@ -256,6 +256,7 @@ def overview_stats():
     rows, dims_order = [], []
     dim_scores, dim_issues = defaultdict(list), defaultdict(int)
     harm_matrix = defaultdict(lambda: defaultdict(int))  # category -> severity -> #cases
+    harm_matrix_cases = defaultdict(lambda: defaultdict(list))  # category -> severity -> [case_id]
     severe_cases = 0
     n_judged = 0
 
@@ -295,6 +296,7 @@ def overview_stats():
             severe_cases += 1
         for cat, sev in case_cells:
             harm_matrix[cat][sev] += 1
+            harm_matrix_cases[cat][sev].append(c["case_id"])
         row["adjudicated"] = ("✎ " + ", ".join(sorted(adj_dims))) if adj_dims else ""
         rows.append(row)
 
@@ -314,6 +316,7 @@ def overview_stats():
         "avg_by_dim": {d: round(sum(s) / len(s), 2) for d, s in dim_scores.items() if s},
         "issues_by_dim": dict(dim_issues),
         "harm_matrix": {cat: dict(sevs) for cat, sevs in harm_matrix.items()},
+        "harm_matrix_cases": {cat: dict(sevs) for cat, sevs in harm_matrix_cases.items()},
     }
 
 

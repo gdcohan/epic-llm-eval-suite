@@ -131,12 +131,12 @@ export function KpiCard({
   label,
   value,
   onClick,
-  active = false,
+  hint = "open »",
 }: {
   label: string;
   value: ReactNode;
-  onClick?: () => void;
-  active?: boolean;
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  hint?: string;
 }) {
   const clickable = Boolean(onClick);
   return (
@@ -144,13 +144,13 @@ export function KpiCard({
       type="button"
       onClick={onClick}
       disabled={!clickable}
-      className={`rounded-xl border bg-white p-4 text-left shadow-sm ${
-        active ? "border-indigo-400 ring-2 ring-indigo-100" : "border-slate-200"
-      } ${clickable ? "cursor-pointer hover:border-indigo-300" : "cursor-default"}`}
+      className={`rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm ${
+        clickable ? "cursor-pointer hover:border-indigo-300" : "cursor-default"
+      }`}
     >
       <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</div>
       <div className="mt-1 text-2xl font-semibold text-slate-900">{value}</div>
-      {clickable && <div className="mt-1 text-xs text-indigo-600">{active ? "× show all" : "filter »"}</div>}
+      {clickable && <div className="mt-1 text-xs text-indigo-600">{hint}</div>}
     </button>
   );
 }

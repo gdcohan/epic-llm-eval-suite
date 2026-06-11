@@ -129,6 +129,7 @@ export interface OverviewStats {
   avg_by_dim: Record<string, number>;
   issues_by_dim: Record<string, number>;
   harm_matrix: Record<string, Record<string, number>>;
+  harm_matrix_cases: Record<string, Record<string, string[]>>;
   harm_categories: string[];
 }
 
