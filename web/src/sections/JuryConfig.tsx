@@ -145,17 +145,7 @@ export default function JuryConfig({ onPanelChanged }: { onPanelChanged?: () => 
                   <input
                     type="checkbox"
                     checked={d.enabled}
-                    onChange={(e) => {
-                      // toggles save immediately (text edits still need 💾 save)
-                      const updated = dims.map((x) =>
-                        x._id === d._id ? { ...x, enabled: e.target.checked } : x,
-                      );
-                      setDims(updated);
-                      act(
-                        () => api.put("/api/config/dimensions", updated.map(({ _id, ...q }) => q)),
-                        `Dimension '${d.name || "unnamed"}' ${e.target.checked ? "enabled" : "disabled"} — saved.`,
-                      );
-                    }}
+                    onChange={(e) => updateDim(d._id, { enabled: e.target.checked })}
                   />
                   enabled
                 </label>
@@ -247,17 +237,7 @@ export default function JuryConfig({ onPanelChanged }: { onPanelChanged?: () => 
                   <input
                     type="checkbox"
                     checked={p.enabled}
-                    onChange={(e) => {
-                      // toggles save immediately (text edits still need 💾 save)
-                      const updated = personas.map((x) =>
-                        x._id === p._id ? { ...x, enabled: e.target.checked } : x,
-                      );
-                      setPersonas(updated);
-                      act(
-                        () => api.put("/api/config/personas", updated.map(({ _id, ...q }) => q)),
-                        `Persona '${p.name || "unnamed"}' ${e.target.checked ? "enabled" : "disabled"} — saved.`,
-                      );
-                    }}
+                    onChange={(e) => updatePersona(p._id, { enabled: e.target.checked })}
                   />
                   enabled
                 </label>
@@ -344,17 +324,9 @@ export default function JuryConfig({ onPanelChanged }: { onPanelChanged?: () => 
                 <input
                   type="checkbox"
                   checked={m.enabled}
-                  onChange={(e) => {
-                    // toggles save immediately (spec edits still need 💾 save)
-                    const updated = models.map((x) =>
-                      x._id === m._id ? { ...x, enabled: e.target.checked } : x,
-                    );
-                    setModels(updated);
-                    act(
-                      () => api.put("/api/config/models", parseModelRows(updated)),
-                      `Model '${m.spec || "unnamed"}' ${e.target.checked ? "enabled" : "disabled"} — saved.`,
-                    );
-                  }}
+                  onChange={(e) =>
+                    setModels((ms) => ms.map((x) => (x._id === m._id ? { ...x, enabled: e.target.checked } : x)))
+                  }
                 />
               </label>
               <input

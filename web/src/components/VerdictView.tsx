@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Adjudication, DimensionResult, Finding, Verdict } from "../types";
-import { fmtScore } from "../lib";
+import { fmtScore, scoreColor } from "../lib";
 import {
   AgreementBadge,
   Badge,
@@ -159,6 +159,7 @@ function DimensionCard({
   onAdjudicate?: (dimension: string, score: number | null, rationale: string) => void;
 }) {
   const [open, setOpen] = useState(true);
+  const [issuesOpen, setIssuesOpen] = useState(true);
   const issues = issueFindings(d);
   const adjDims = adjudication?.dimensions ?? {};
   const adjRationales = adjudication?.rationales ?? {};
@@ -190,55 +191,67 @@ function DimensionCard({
       {open && (
         <div className="border-t border-slate-100">
           {/* zone 1: the jury's verdict */}
-          <div className="px-3 py-2.5">
-            <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+          <div className="px-4 py-3">
+            <div className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
               Jury verdict <span className="font-normal normal-case">· spread {fmtScore(d.score_spread)}</span>
             </div>
             {adjudicated && (
-              <div className="mb-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              <div className="mb-2.5 flex flex-wrap items-center gap-2 text-sm text-slate-500">
                 <Badge color="#1565c0">✎ adjudicated {adjDims[d.dimension]}</Badge>
                 <span>(jury {fmtScore(d.mean_score)})</span>
                 {adjRationales[d.dimension] && <span>✎ {adjRationales[d.dimension]}</span>}
               </div>
             )}
-            <ul className="space-y-1">
+            <ul className="space-y-2.5">
               {d.verdicts.map((v, i) => (
-                <li key={i} className="text-xs text-slate-600">
-                  {v.error ? (
-                    <>
-                      <b>{v.member}</b>: ⚠️ {v.error}
-                    </>
-                  ) : (
-                    <>
-                      <b>{v.member}</b> ({fmtScore(v.score)}): {v.synopsis || ""}
-                    </>
-                  )}
+                <li key={i} className="flex items-start gap-2.5">
+                  <span
+                    className="mt-0.5 inline-block w-9 shrink-0 rounded px-1 py-0.5 text-center text-xs font-semibold text-white"
+                    style={{ background: v.error ? "#9e9e9e" : scoreColor(v.score ?? null) }}
+                  >
+                    {v.error ? "—" : fmtScore(v.score)}
+                  </span>
+                  <div className="min-w-0 text-[13px] leading-relaxed">
+                    <div className="font-medium text-slate-700">{v.member}</div>
+                    {v.error ? (
+                      <div className="text-red-700">⚠️ {v.error}</div>
+                    ) : (
+                      <div className="text-slate-600">{v.synopsis || ""}</div>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* zone 2: flagged issues, visually set apart */}
+          {/* zone 2: flagged issues, visually set apart + collapsible on their own */}
           {issues.length > 0 && (
-            <div className="border-t border-amber-200 bg-amber-50/60 px-3 py-2.5">
-              <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-amber-700">
-                ⚠ Flagged issues ({issues.length})
-                {onToggleLabel && (
-                  <span className="font-normal normal-case"> — mark each ✓ valid / ✗ false alarm</span>
+            <div className="border-t border-amber-200 bg-amber-50/60">
+              <button
+                type="button"
+                onClick={() => setIssuesOpen((v) => !v)}
+                className="flex w-full items-center gap-1.5 px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-amber-700 hover:bg-amber-100/60"
+              >
+                <span>{issuesOpen ? "▾" : "▸"}</span>
+                <span>⚠ Flagged issues ({issues.length})</span>
+                {onToggleLabel && issuesOpen && (
+                  <span className="font-normal normal-case">— mark each ✓ valid / ✗ false alarm</span>
                 )}
-              </div>
-              <div className="space-y-1.5">
-                {issues.map((f, i) => (
-                  <FindingRow
-                    key={f.key ?? i}
-                    finding={f}
-                    dimension={d.dimension}
-                    label={f.key ? findingLabels[f.key]?.label : undefined}
-                    onFocusNote={onFocusNote}
-                    onToggleLabel={onToggleLabel}
-                  />
-                ))}
-              </div>
+              </button>
+              {issuesOpen && (
+                <div className="space-y-2 px-4 pb-3">
+                  {issues.map((f, i) => (
+                    <FindingRow
+                      key={f.key ?? i}
+                      finding={f}
+                      dimension={d.dimension}
+                      label={f.key ? findingLabels[f.key]?.label : undefined}
+                      onFocusNote={onFocusNote}
+                      onToggleLabel={onToggleLabel}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
