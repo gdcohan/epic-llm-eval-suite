@@ -159,7 +159,7 @@ function DimensionCard({
   onAdjudicate?: (dimension: string, score: number | null, rationale: string) => void;
 }) {
   const [open, setOpen] = useState(true);
-  const [issuesOpen, setIssuesOpen] = useState(true);
+  const [issuesOpen, setIssuesOpen] = useState(false);
   const issues = issueFindings(d);
   const adjDims = adjudication?.dimensions ?? {};
   const adjRationales = adjudication?.rationales ?? {};
