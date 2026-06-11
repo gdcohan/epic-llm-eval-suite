@@ -1,8 +1,10 @@
 # Handoff / Context
 
 Continuity notes so a new session (or a new contributor) can pick up without
-re-deriving everything. Pair this with `README.md` (how to run) and `ROADMAP.md`
-(what's next).
+re-deriving everything. This is the **single source of truth for state,
+decisions, and plan** (the former `ROADMAP.md` is folded into the Plan section
+below). Operational how-to (run/reproduce/gotchas/process) lives in
+`CLAUDE.md`; user-facing behavior lives in `README.md`.
 
 **Working branch:** `claude/gracious-mendel-u4go4n` (develop + push here).
 
@@ -133,14 +135,11 @@ missed issues, Jury Config, Live Judge, Calibrate precision + authored counts);
 5 demo cases; **omission-probe harness** (`probes.py`); **rewritten
 omission-only comprehensiveness judge**.
 
-**Not built yet:** recall/F1 quantification (deliberately deferred — see
-forward plan below); Live-Judge **pin/compare** tuning loop; harm **roll-up
-score / V2 pass**; A/B config experiments; synthetic summary generation;
-prod/PHI hardening; Streamlit retirement.
-
 ---
 
-## Forward plan: comprehensiveness → recall (agreed with the user)
+## Plan
+
+### Now: comprehensiveness → recall (agreed with the user)
 
 The agreed sequencing — get comprehensiveness good first, quantify recall later:
 
@@ -170,31 +169,38 @@ The agreed sequencing — get comprehensiveness good first, quantify recall late
      `authored_findings` — biased upward (anchoring) but measures reality; the
      storage is already shaped for this (assertions, separate from labels).
 
+### Mid-term
+
+- **Live-Judge pin/compare** — pin a verdict, change a prompt/panel, re-judge,
+  and see the before/after on one example (the manual tuning loop).
+- **A/B config experiments** — named config snapshots; verdicts record which
+  config produced them; compare two configs over a benchmark set.
+- **Higher calibration rungs** (need labeled volume): few-shot anchoring with
+  adjudicated examples, score recalibration (learn jury→human offsets),
+  LLM-proposed prompt edits. Train/test split matters once examples feed the
+  prompt.
+
+### Later / punted
+
+- **Harm V2** — dedicated harm pass (decouple severity from the flagging
+  juror's leniency), likelihood axis (severity × likelihood), per-summary risk
+  roll-up, harm-weighted calibration. (V1 — inline per-finding tags — is built.)
+- **Synthetic summary generation** — LLM summarizer + deliberate error
+  injection to produce labeled candidates at volume.
+- **Hardening** — prompt-injection defense (note text is untrusted), prompt
+  caching for the shared notes block, cost/latency, structured-output
+  robustness.
+- **Production readiness** — ingest real Epic GenAI summaries + their
+  provenance; PHI / BAA; non-sandbox org connection.
+- **Streamlit retirement** — delete `app.py` once the web UI is proven in
+  day-to-day use.
+
 ---
 
 ## Conventions & gotchas
 
-- **`data/` is gitignored** — cases, verdicts, notes, adjudications, and
-  `jury_config.json` are **local to each container**. Nothing there transfers
-  across sessions; re-run `python examples/generate_demo_cases.py` to reseed.
-  (Two stale verdict JSONs are tracked from an early force-commit; intentionally
-  left.)
-- **Env is read at process start** — after editing `.env`, **restart** the
-  server (uvicorn or streamlit).
-- **Stale-server trap**: `npm run dev` reloads only the frontend; after pulling
-  backend changes restart uvicorn (or run `--reload`). A stale server's pydantic
-  models silently strip new fields — looks like "saves don't persist".
-- **Config shadowing**: `data/jury_config.json` overrides code defaults; after a
-  default-prompt change, reset dimensions in Jury Config or the jury never sees it.
-- **Stub vs live:** `JURY_MODE=stub` (default) is fully offline; `live` needs the
-  relevant API key(s); fetching uncached notes by ID needs Epic creds (live only).
-- **Validation:** the app is testable headless via `streamlit.testing.v1.AppTest`
-  (used throughout instead of just "it serves 200").
-- **This dev container's `cryptography` is broken** (`_cffi_backend`); that's why
-  `jwt` import is lazy and offline paths avoid it. A clean `pip install` elsewhere
-  is fine.
-- **Process:** develop on the working branch; commit messages end with the session
-  link; do **not** open PRs or push elsewhere unless asked.
-- **Working style the user prefers:** for anything beyond a small contained change,
-  **sketch/spec and get a 👍 before building.** (Earlier in this project a few
-  features got built ahead of confirmation — avoid that.)
+Moved to `CLAUDE.md` (single owner) — read it at session start. Highlights that
+shape interpretation of this doc: `data/` (cases, verdicts, adjudications,
+jury config) is **local and gitignored** — nothing there transfers between
+machines; and `data/jury_config.json` **shadows code defaults**, so saved
+dimensions can hide a new default prompt.

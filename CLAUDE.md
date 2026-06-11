@@ -1,8 +1,39 @@
 # CLAUDE.md
 
-Operational guide for working in this repo. Pair with `HANDOFF.md` (current
-state, decisions, forward plan) and `ROADMAP.md` (build order). When state and
-docs disagree, trust the code, then fix the doc.
+Operational guide for working in this repo — read this first, every session.
+
+## The doc set: read order and upkeep
+
+There are exactly **three** docs. Read them in this order at session start
+(~10 minutes total); together they ARE the state of the world:
+
+1. **`CLAUDE.md`** (this file) — how to run, reproduce, validate; gotchas;
+   process; this protocol.
+2. **`HANDOFF.md`** — single source of truth for *state, decisions, and plan*:
+   what's built, why it's shaped that way, what's next/mid-term/punted.
+3. **`README.md`** — user-facing: what the tool is, features, usage. Skim.
+
+**Ownership** (no duplication — link to the owner instead of restating):
+
+| Doc | Owns | Update when… |
+|---|---|---|
+| `CLAUDE.md` | commands, workflows, validation, gotchas, process | a command/workflow changes; a new gotcha bites a session |
+| `HANDOFF.md` | current state, key decisions, plan | any session that builds something, makes a decision, or changes the plan |
+| `README.md` | user-visible behavior + usage | a feature changes what a user sees or does |
+
+**Keeping it honest:**
+
+- **Code wins.** A doc that contradicts the code is wrong — fix the doc in the
+  same commit you notice it.
+- **End-of-session sweep** (before the final push): reread HANDOFF's *Current
+  state* and *Plan* against this session's diff and update them; ask whether
+  any command, gotcha, or user-visible behavior changed and touch the owning
+  doc. Doc updates ship in the same push as the code they describe.
+- **Decisions made in discussion** (not just code) go to HANDOFF's *Key
+  decisions* — they're the easiest thing to lose between sessions.
+- **Don't add a fourth doc** without merging or retiring one; the set must stay
+  reviewable at session start. (`ROADMAP.md` was folded into HANDOFF's Plan
+  section for exactly this reason.)
 
 ## What this is
 
@@ -67,6 +98,11 @@ serves the last `npm run build`, which goes stale during development.
 6. **Editable output contract is load-bearing** — must keep `score` /
    `synopsis` / `findings` keys and verbatim quotes, or scores/source-links
    break.
+7. **Some dev containers have a broken `cryptography`** (`_cffi_backend`);
+   that's why `jwt` is imported lazily and offline paths avoid it. A clean
+   `pip install` elsewhere is fine.
+8. **Two stale verdict JSONs are tracked in git** from an early force-commit —
+   intentionally left; don't take them as current output.
 
 ## Validation
 
